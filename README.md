@@ -25,10 +25,5 @@ llama-server --models-preset /path/to/models.ini --models-max 2
 llama-server -m Qwen3.6-35B-A3B-UD-IQ4_XS.gguf --port 9090
 ```
 
-```
-```
 
 > This serves a max of 2 models on server. If a new model is requested the idle model is offloaded to load the new one
-```
-```
-```
