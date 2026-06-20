@@ -247,31 +247,6 @@
 					}
 				},
 				{
-					"id": "gemma4:12b",
-					"name": "Gemma 4 12B (Local)",
-					"reasoning": true,
-					"input": ["text", "image"],
-					"contextWindow": 256000,
-					"maxTokens": 32000,
-					"compat": {
-						"thinkingFormat": "chat-template"
-					},
-					"thinkingLevelMap": {
-						"off": null,
-						"minimal": "low",
-						"low": "low",
-						"medium": "medium",
-						"high": "high",
-						"xhigh": "max"
-					},
-					"cost": {
-						"input": 0,
-						"output": 0,
-						"cacheRead": 0,
-						"cacheWrite": 0
-					}
-				},
-				{
 					"id": "gemma-4-12B-it-qat-UD-Q4_K_XL",
 					"alias": "premium",
 					"name": "Gemma 4 12B Q4_K XL (Local)",
