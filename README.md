@@ -36,21 +36,14 @@ Serve up to N models simultaneously. When a new model is requested and the limit
 llama-server --models-preset llama-models.ini --models-max 2 --port 9090
 ```
 
-- `--models-max 0` = unlimited (load everything at startup)
-- `--no-models-autoload` = don't load until first request
-
 ---
 
 ## The INI Preset File
-
-Keys use **hyphens**, matching the CLI flags (e.g. `--ctx-size` → `ctx-size`).
 
 ```ini
 # Global defaults applied to every model section
 [*]
 ctx-size = 256000
-port     = 9090
-host     = 127.0.0.1
 
 # Per-model overrides — section name becomes the model ID used in API calls
 [my-model:tag]
@@ -59,7 +52,7 @@ ctx-size = 131072
 alias    = my-model,my-model-alias
 ```
 
-Any CLI flag can be used as an INI key (strip `--`, keep hyphens). Per-model values override `[*]` defaults.
+Per-model values override `[*]` defaults.
 
 ---
 
@@ -97,17 +90,73 @@ Any CLI flag can be used as an INI key (strip `--`, keep hyphens). Per-model val
 
 ### Performance
 
-| Flag                   | Default     | Notes                                         |
-| ---------------------- | ----------- | --------------------------------------------- |
-| `-b, --batch-size N`   | `2048`      | Logical batch size (prompt processing)        |
-| `-ub, --ubatch-size N` | `512`       | Physical micro-batch size                     |
-| `-fa, --flash-attn`    | `auto`      | Flash Attention (`on`/`off`/`auto`)           |
-| `-np, --parallel N`    | `-1` (auto) | Number of concurrent request slots            |
-| `--cont-batching`      | on          | Dynamic batching across slots                 |
-| `--cache-type-k TYPE`  | `f16`       | KV cache K dtype: `f16`, `q8_0`, `q4_0`, etc. |
-| `--cache-type-v TYPE`  | `f16`       | KV cache V dtype (same options as K)          |
-| `--threads N`          | auto        | CPU threads for generation                    |
-| `--threads-http N`     | `-1` (auto) | Threads for HTTP request handling             |
+| Flag                     | Default     | Notes                                                                                    |
+| ------------------------ | ----------- | ---------------------------------------------------------------------------------------- |
+| `-b, --batch-size N`     | `2048`      | Logical batch size (prompt processing)                                                   |
+| `-ub, --ubatch-size N`   | `512`       | Physical micro-batch size                                                                |
+| `-fa, --flash-attn`      | `auto`      | Flash Attention (`on`/`off`/`auto`)                                                      |
+| `-np, --parallel N`      | `-1` (auto) | Number of concurrent request slots                                                       |
+| `--cont-batching`        | on          | Dynamic batching across slots                                                            |
+| `--cache-type-k TYPE`    | `f16`       | KV cache K dtype: `f16`, `q8_0`, `q4_0`, `q4_1`, `iq4_nl`, `q5_0`, `q5_1`, `bf16`, `f32` |
+| `--cache-type-v TYPE`    | `f16`       | KV cache V dtype (same options as K)                                                     |
+| `--threads N`            | auto        | CPU threads for generation                                                               |
+| `--threads-http N`       | `-1` (auto) | Threads for HTTP request handling                                                        |
+| `-tb, --threads-batch N` | auto        | Threads for batch/prompt processing                                                      |
+| `--poll N`               | `50`        | Polling level for work wait (0–100)                                                      |
+| `--prio N`               | `0`         | Process/thread priority: low(-1), normal(0), medium(1), high(2), realtime(3)             |
+| `--prio-batch N`         | `0`         | Batch processing thread priority                                                         |
+
+### Large Context Window Performance
+
+These flags are especially useful when running with large `--ctx-size` values (e.g. 64K–256K+).
+
+| Flag                               | Default              | Notes                                                                                                                                                                           |
+| ---------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-ctk, --cache-type-k TYPE`        | `f16`                | **KV cache K quantization** — reduces KV cache memory by up to **16×** vs `f16` with `q4_0` or `q8_0`. Use `q4_0`/`q8_0`/`q4_1`/`iq4_nl`/`q5_0`/`q5_1` for large contexts.      |
+| `-ctv, --cache-type-v TYPE`        | `f16`                | KV cache V quantization (same options as K). V quantization typically has less accuracy impact than K.                                                                          |
+| `-ctkd, --cache-type-k-draft TYPE` | `f16`                | KV cache K dtype for the **draft model** in speculative decoding. Use quantized types to reduce draft model KV overhead.                                                        |
+| `-ctvd, --cache-type-v-draft TYPE` | `f16`                | KV cache V dtype for the **draft model**. Same options as K.                                                                                                                    |
+| `-kvu, --kv-unified`               | auto                 | Use a **single unified KV buffer** shared across all sequences. Reduces per-slot overhead and fragmentation when many slots share similar context.                              |
+| `--cache-idle-slots`               | enabled              | Save idle slots to the prompt cache on new task, and clear them when using unified KV. Reduces memory pressure when swapping between models/contexts.                           |
+| `-cram, --cache-ram N`             | `8192` MiB           | Maximum **RAM** cache size in MiB. Increase for large shared-prompt workloads; `-1` = no limit.                                                                                 |
+| `-ctxcp, --ctx-checkpoints N`      | `32`                 | Max context checkpoints per slot. Enables rollback/rewind of context. Increase for deeper history tracking.                                                                     |
+| `-cms, --checkpoint-min-step N`    | `256`                | Min spacing (tokens) between context checkpoints. Higher values = less memory overhead for checkpoints.                                                                         |
+| `--swa-full`                       | off                  | Use full-size SWA (sliding window attention) cache. Enable when using models with full attention (not SWA).                                                                     |
+| `--no-host`                        | off                  | Bypass host buffer, allowing extra buffers to be used. May reduce memory pressure on GPU-constrained systems.                                                                   |
+| `-dio, --direct-io`                | off                  | Use DirectIO for file I/O. Helps on Linux with large models and large context windows to avoid page cache pressure.                                                             |
+| `--numa TYPE`                      | off                  | NUMA optimizations: `distribute` (spread across nodes), `isolate` (keep on start node), or `numactl` (use numactl map). Critical for multi-socket servers with large KV caches. |
+| `-C, --cpu-mask M`                 | ""                   | Hex CPU affinity mask for generation threads. Pin to specific cores for cache locality with large KV caches.                                                                    |
+| `-Cr, --cpu-range lo-hi`           | ""                   | CPU core range for affinity (complements `--cpu-mask`).                                                                                                                         |
+| `--cpu-strict`                     | `0`                  | Strict CPU placement. Use with `--numa` for guaranteed NUMA-local allocation.                                                                                                   |
+| `-Crb, --cpu-range-batch lo-hi`    | same as --cpu-mask   | CPU core range for batch/prompt processing threads. Pin to different cores from generation.                                                                                     |
+| `-Cb, --cpu-mask-batch M`          | same as --cpu-mask   | Hex CPU affinity mask for batch threads.                                                                                                                                        |
+| `--cpu-strict-batch`               | same as --cpu-strict | Strict CPU placement for batch threads.                                                                                                                                         |
+| `--prio-batch N`                   | `0`                  | Priority for batch threads (same scale as `--prio`).                                                                                                                            |
+| `--poll-batch N`                   | same as --poll       | Polling level for batch thread work wait (0 = no polling). Reduces CPU usage when idle.                                                                                         |
+| `--context-shift`                  | off                  | Enable context shift on infinite generation. Slides context forward instead of truncating. Useful for streaming/continuous generation.                                          |
+| `--cache-prompt`                   | enabled              | Enable prompt caching. Reuse KV cache across requests with shared prefix. Keep enabled for multi-request workloads.                                                             |
+| `--cache-reuse N`                  | `0`                  | Min chunk size (tokens) to attempt KV-shift cache reuse. Set higher (e.g. `512`) when prompts have large shared prefixes.                                                       |
+| `-sps, --slot-prompt-similarity N` | `0.10`               | How much a new prompt must match an existing slot to reuse it. Increase (e.g. `0.30`) to be more selective; decrease for more reuse.                                            |
+| `-fitc, --fit-ctx N`               | `4096`               | Minimum ctx size `--fit` can shrink to. Raise to prevent aggressive shrinking on large context workloads.                                                                       |
+| `-fitt, --fit-target MiB`          | `1024`               | Target VRAM margin per GPU. Increase to give KV cache more breathing room.                                                                                                      |
+
+> **Quick reference — memory impact of KV cache types** (per token, per head-dim-128 model, per layer):
+>
+> | Type | Memory per (K,V) pair | 128K context × 32 layers (8×7B) |
+> |--------|----------------------|----------------------------------|
+> | `f16` | baseline × 2 | ~16 GB |
+> | `bf16` | baseline × 2 | ~16 GB |
+> | `q8_0` | baseline × 0.5 | ~8 GB |
+> | `q5_1` | baseline × 0.3125 | ~5 GB |
+> | `q4_0` | baseline × 0.25 | ~4 GB |
+> | `q4_1` | baseline × 0.28125 | ~4.5 GB |
+> | `iq4_nl` | baseline × 0.25 | ~4 GB |
+
+### GPU Offloading
+
+| Flag                   | Default | Notes                                       |
+| ---------------------- | ------- | ------------------------------------------- |
+| `-ngl, --gpu-layers N` | `auto`  | Layers to put in VRAM; `all` = full offload |
 
 ### Prompt Caching
 
@@ -356,8 +405,6 @@ INI keys are CLI flags with `--` stripped — **hyphens, not underscores**.
 
 ```ini
 [*]
-host           = 127.0.0.1
-port           = 9090
 ctx-size       = 32768
 gpu-layers     = all
 flash-attn     = on
@@ -366,3 +413,24 @@ cache-type-v   = q8_0
 parallel       = 4
 cont-batching  = true
 ```
+
+---
+
+## Resources
+
+| Resource                                          | Link                                                                       |
+| ------------------------------------------------- | -------------------------------------------------------------------------- |
+| **llama.cpp server README** (full flag reference) | <https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md>   |
+| **llama.cpp CLI README** (llama-cli flags)        | <https://github.com/ggml-org/llama.cpp/blob/master/tools/cli/README.md>      |
+| **Function calling docs**                         | <https://github.com/ggml-org/llama.cpp/blob/master/docs/function-calling.md> |
+| **Multimodal docs**                               | <https://github.com/ggml-org/llama.cpp/blob/master/docs/multimodal.md>       |
+| **NUMA optimization guide**                       | <https://github.com/ggml-org/llama.cpp/issues/1437>                          |
+| **Server changelog**                              | <https://github.com/ggml-org/llama.cpp/issues/9291>                          |
+| **KV cache checkpoints (SWA)**                    | <https://github.com/ggml-org/llama.cpp/pull/15293>                           |
+| **Prompt cache / cache-ram**                      | <https://github.com/ggml-org/llama.cpp/pull/16391>                           |
+| **Full-size SWA cache**                           | <https://github.com/ggml-org/llama.cpp/pull/13194>                           |
+| **Adaptive-p sampler**                            | <https://github.com/ggml-org/llama.cpp/pull/17927>                           |
+| **KV cache shifting (cache-reuse)**               | <https://ggml.ai/f0.png>                                                     |
+| **Docker image**                                  | <https://github.com/ggml-org/llama.cpp/pkgs/container/llama.cpp>             |
+| **llama.cpp docs (general)**                      | <https://github.com/ggml-org/llama.cpp/tree/master/docs>                     |
+| **llama.cpp wiki (templates, quantization)**      | <https://github.com/ggml-org/llama.cpp/wiki>                                 |
