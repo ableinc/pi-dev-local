@@ -1,302 +1,302 @@
 {
-	"providers": {
-		"ollama": {
-			"baseUrl": "http://localhost:11434/v1",
-			"api": "openai-completions",
-			"apiKey": "ollama",
-			"compat": {
-				"supportsDeveloperRole": false,
-				"supportsReasoningEffort": true
-			},
-			"models": [
-				{
-					"id": "qwen3-coder:30b",
-					"name": "Qwen3 Coder 30B (Local)",
-					"reasoning": true,
-					"input": ["text"],
-					"contextWindow": 262144,
-					"maxTokens": 32000,
-					"compat": {
-						"thinkingFormat": "qwen"
-					},
-					"thinkingLevelMap": {
-						"off": null,
-						"minimal": "minimal",
-						"low": "low",
-						"medium": "medium",
-						"high": "high",
-						"xhigh": "max"
-					},
-					"cost": {
-						"input": 0,
-						"output": 0,
-						"cacheRead": 0,
-						"cacheWrite": 0
-					}
-				},
-				{
-					"id": "qwen3.5:9b",
-					"name": "Qwen3.5 9B (Local)",
-					"reasoning": true,
-					"input": ["text", "image"],
-					"contextWindow": 262144,
-					"maxTokens": 32000,
-					"compat": {
-						"thinkingFormat": "qwen"
-					},
-					"thinkingLevelMap": {
-						"off": null,
-						"minimal": "minimal",
-						"low": "low",
-						"medium": "medium",
-						"high": "high",
-						"xhigh": "max"
-					},
-					"cost": {
-						"input": 0,
-						"output": 0,
-						"cacheRead": 0,
-						"cacheWrite": 0
-					}
-				},
-				{
-					"id": "gpt-oss:20b",
-					"name": "GPT-OSS 20B (Local)",
-					"reasoning": true,
-					"input": ["text"],
-					"contextWindow": 131072,
-					"maxTokens": 32000,
-					"compat": {
-						"thinkingFormat": "openrouter"
-					},
-					"thinkingLevelMap": {
-						"off": null,
-						"minimal": "minimal",
-						"low": "low",
-						"medium": "medium",
-						"high": "high",
-						"xhigh": "max"
-					},
-					"cost": {
-						"input": 0,
-						"output": 0,
-						"cacheRead": 0,
-						"cacheWrite": 0
-					}
-				},
-				{
-					"id": "gemma4:12b",
-					"name": "Gemma 4 12B (Local)",
-					"reasoning": true,
-					"input": ["text", "image"],
-					"contextWindow": 262144,
-					"maxTokens": 32000,
-					"compat": {
-						"thinkingFormat": "qwen"
-					},
-					"thinkingLevelMap": {
-						"off": null,
-						"minimal": "low",
-						"low": "low",
-						"medium": "medium",
-						"high": "high",
-						"xhigh": "max"
-					},
-					"cost": {
-						"input": 0,
-						"output": 0,
-						"cacheRead": 0,
-						"cacheWrite": 0
-					}
-				},
-				{
-					"id": "north-mini-code-1.0:q4_K_M",
-					"name": "North Mini Code 1.0 (Local)",
-					"reasoning": true,
-					"input": ["text"],
-					"contextWindow": 500000,
-					"maxTokens": 64000,
-					"compat": {
-						"thinkingFormat": "qwen"
-					},
-					"thinkingLevelMap": {
-						"off": null,
-						"minimal": "minimal",
-						"low": "low",
-						"medium": "medium",
-						"high": "high",
-						"xhigh": "max"
-					},
-					"cost": {
-						"input": 0,
-						"output": 0,
-						"cacheRead": 0,
-						"cacheWrite": 0
-					}
-				}
-			]
-		},
-		"llamacpp": {
-			"baseUrl": "http://localhost:9090/v1",
-			"api": "openai-completions",
-			"apiKey": "none",
-			"compat": {
-				"supportsDeveloperRole": true,
-				"supportsReasoningEffort": true
-			},
-			"models": [
-				{
-					"id": "Qwen3.6-35B-A3B-UD-IQ4_XS.gguf",
-					"alias": "premium",
-					"name": "Qwen3.6 35B (A3B UD IQ4_XS - Local)",
-					"reasoning": true,
-					"input": ["text"],
-					"contextWindow": 262144,
-					"maxTokens": 32768,
-					"compat": {
-						"thinkingFormat": "qwen"
-					},
-					"thinkingLevelMap": {
-						"off": null,
-						"minimal": "minimal",
-						"low": "low",
-						"medium": "medium",
-						"high": "high",
-						"xhigh": "max"
-					},
-					"cost": {
-						"input": 0,
-						"output": 0,
-						"cacheRead": 0,
-						"cacheWrite": 0
-					}
-				},
-				{
-					"id": "qwen3-coder:30b",
-					"name": "Qwen3 Coder 30B (Local)",
-					"reasoning": true,
-					"input": ["text"],
-					"contextWindow": 262144,
-					"maxTokens": 32000,
-					"compat": {
-						"thinkingFormat": "qwen"
-					},
-					"thinkingLevelMap": {
-						"off": null,
-						"minimal": "minimal",
-						"low": "low",
-						"medium": "medium",
-						"high": "high",
-						"xhigh": "max"
-					},
-					"cost": {
-						"input": 0,
-						"output": 0,
-						"cacheRead": 0,
-						"cacheWrite": 0
-					}
-				},
-				{
-					"id": "qwen3.5:9b",
-					"name": "Qwen3.5 9B (Local)",
-					"reasoning": true,
-					"input": ["text", "image"],
-					"contextWindow": 262144,
-					"maxTokens": 32000,
-					"compat": {
-						"thinkingFormat": "qwen"
-					},
-					"thinkingLevelMap": {
-						"off": null,
-						"minimal": "minimal",
-						"low": "low",
-						"medium": "medium",
-						"high": "high",
-						"xhigh": "max"
-					},
-					"cost": {
-						"input": 0,
-						"output": 0,
-						"cacheRead": 0,
-						"cacheWrite": 0
-					}
-				},
-				{
-					"id": "gpt-oss:20b",
-					"name": "GPT-OSS 20B (Local)",
-					"reasoning": true,
-					"input": ["text"],
-					"contextWindow": 131072,
-					"maxTokens": 32000,
-					"compat": {
-						"thinkingFormat": "openrouter"
-					},
-					"thinkingLevelMap": {
-						"off": null,
-						"minimal": "minimal",
-						"low": "low",
-						"medium": "medium",
-						"high": "high",
-						"xhigh": "max"
-					},
-					"cost": {
-						"input": 0,
-						"output": 0,
-						"cacheRead": 0,
-						"cacheWrite": 0
-					}
-				},
-				{
-					"id": "gemma4:12b",
-					"name": "Gemma 4 12B (Local)",
-					"reasoning": true,
-					"input": ["text", "image"],
-					"contextWindow": 262144,
-					"maxTokens": 32000,
-					"compat": {
-						"thinkingFormat": "qwen"
-					},
-					"thinkingLevelMap": {
-						"off": null,
-						"minimal": "low",
-						"low": "low",
-						"medium": "medium",
-						"high": "high",
-						"xhigh": "max"
-					},
-					"cost": {
-						"input": 0,
-						"output": 0,
-						"cacheRead": 0,
-						"cacheWrite": 0
-					}
-				},
-				{
-					"id": "north-mini-code-1.0:q4_K_M",
-					"name": "North Mini Code 1.0 (Local)",
-					"reasoning": true,
-					"input": ["text"],
-					"contextWindow": 500000,
-					"maxTokens": 64000,
-					"compat": {
-						"thinkingFormat": "qwen"
-					},
-					"thinkingLevelMap": {
-						"off": null,
-						"minimal": "minimal",
-						"low": "low",
-						"medium": "medium",
-						"high": "high",
-						"xhigh": "max"
-					},
-					"cost": {
-						"input": 0,
-						"output": 0,
-						"cacheRead": 0,
-						"cacheWrite": 0
-					}
-				}
-			]
-		}
-	}
+  "providers": {
+    "ollama": {
+      "baseUrl": "http://localhost:11434/v1",
+      "api": "openai-completions",
+      "apiKey": "ollama",
+      "compat": {
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": true
+      },
+      "models": [
+        {
+          "id": "qwen3-coder:30b",
+          "name": "Qwen3 Coder 30B (Local)",
+          "reasoning": true,
+          "input": ["text"],
+          "contextWindow": 262144,
+          "maxTokens": 32000,
+          "compat": {
+            "thinkingFormat": "qwen"
+          },
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": "minimal",
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "max"
+          },
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "id": "qwen3.5:9b",
+          "name": "Qwen3.5 9B (Local)",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 262144,
+          "maxTokens": 32000,
+          "compat": {
+            "thinkingFormat": "qwen"
+          },
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": "minimal",
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "max"
+          },
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "id": "gpt-oss:20b",
+          "name": "GPT-OSS 20B (Local)",
+          "reasoning": true,
+          "input": ["text"],
+          "contextWindow": 131072,
+          "maxTokens": 32000,
+          "compat": {
+            "thinkingFormat": "openrouter"
+          },
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": "minimal",
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "max"
+          },
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "id": "gemma4:12b",
+          "name": "Gemma 4 12B (Local)",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 262144,
+          "maxTokens": 32000,
+          "compat": {
+            "thinkingFormat": "qwen"
+          },
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": "low",
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "max"
+          },
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "id": "north-mini-code-1.0:q4_K_M",
+          "name": "North Mini Code 1.0 (Local)",
+          "reasoning": true,
+          "input": ["text"],
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "compat": {
+            "thinkingFormat": "qwen"
+          },
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": "minimal",
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "max"
+          },
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        }
+      ]
+    },
+    "llamacpp": {
+      "baseUrl": "http://localhost:9090/v1",
+      "api": "openai-completions",
+      "apiKey": "none",
+      "compat": {
+        "supportsDeveloperRole": true,
+        "supportsReasoningEffort": true
+      },
+      "models": [
+        {
+          "id": "Qwen3.6-35B-A3B-UD-IQ4_XS",
+          "alias": "premium",
+          "name": "Qwen3.6 35B (A3B UD IQ4_XS - Local)",
+          "reasoning": true,
+          "input": ["text"],
+          "contextWindow": 262144,
+          "maxTokens": 32768,
+          "compat": {
+            "thinkingFormat": "qwen"
+          },
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": "minimal",
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "max"
+          },
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "id": "qwen3-coder:30b",
+          "name": "Qwen3 Coder 30B (Local)",
+          "reasoning": true,
+          "input": ["text"],
+          "contextWindow": 262144,
+          "maxTokens": 32000,
+          "compat": {
+            "thinkingFormat": "qwen"
+          },
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": "minimal",
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "max"
+          },
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "id": "qwen3.5:9b",
+          "name": "Qwen3.5 9B (Local)",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 262144,
+          "maxTokens": 32000,
+          "compat": {
+            "thinkingFormat": "qwen"
+          },
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": "minimal",
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "max"
+          },
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "id": "gpt-oss:20b",
+          "name": "GPT-OSS 20B (Local)",
+          "reasoning": true,
+          "input": ["text"],
+          "contextWindow": 131072,
+          "maxTokens": 32000,
+          "compat": {
+            "thinkingFormat": "openrouter"
+          },
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": "minimal",
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "max"
+          },
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "id": "gemma4:12b",
+          "name": "Gemma 4 12B (Local)",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "contextWindow": 262144,
+          "maxTokens": 32000,
+          "compat": {
+            "thinkingFormat": "qwen"
+          },
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": "low",
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "max"
+          },
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "id": "north-mini-code-1.0:q4_K_M",
+          "name": "North Mini Code 1.0 (Local)",
+          "reasoning": true,
+          "input": ["text"],
+          "contextWindow": 500000,
+          "maxTokens": 64000,
+          "compat": {
+            "thinkingFormat": "qwen"
+          },
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": "minimal",
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "max"
+          },
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          }
+        }
+      ]
+    }
+  }
 }

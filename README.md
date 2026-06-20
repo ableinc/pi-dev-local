@@ -2,10 +2,10 @@
 
 ## Model Locations
 
-| Backend    | Path |
-|------------|------|
+| Backend    | Path                                      |
+| ---------- | ----------------------------------------- |
 | **Ollama** | `/usr/share/ollama/.ollama/models/blobs/` |
-| **Llama**  | `~/.cache/llama.cpp/` |
+| **Llama**  | `~/.cache/llama.cpp/`                     |
 
 > To resolve an Ollama blob path: check the manifest at `/usr/share/ollama/.ollama/models/manifests/` and match the `sha256` hash with `mediaType: application/vnd.ollama.image.model`.
 
@@ -33,7 +33,7 @@ llama-server -m /path/to/model.gguf --port 9090
 Serve up to N models simultaneously. When a new model is requested and the limit is reached, the longest-idle model is offloaded first.
 
 ```bash
-llama-server --models-preset llama-models.ini --models-max 2
+llama-server --models-preset llama-models.ini --models-max 2 --port 9090
 ```
 
 - `--models-max 0` = unlimited (load everything at startup)
@@ -67,80 +67,80 @@ Any CLI flag can be used as an INI key (strip `--`, keep hyphens). Per-model val
 
 ### Network
 
-| Flag | Default | Notes |
-|------|---------|-------|
-| `--host HOST` | `127.0.0.1` | Use `0.0.0.0` to expose on LAN |
-| `--port PORT` | `8080` | |
-| `--api-key KEY` | none | Comma-separate multiple keys |
-| `--timeout N` | `3600` | Read/write timeout in seconds |
+| Flag            | Default     | Notes                          |
+| --------------- | ----------- | ------------------------------ |
+| `--host HOST`   | `127.0.0.1` | Use `0.0.0.0` to expose on LAN |
+| `--port PORT`   | `8080`      |                                |
+| `--api-key KEY` | none        | Comma-separate multiple keys   |
+| `--timeout N`   | `3600`      | Read/write timeout in seconds  |
 
 ### Context & Memory
 
-| Flag | Default | Notes |
-|------|---------|-------|
-| `-c, --ctx-size N` | `0` (from model) | Total KV context window in tokens |
-| `-n, --predict N` | `-1` (∞) | Max tokens to generate per request |
-| `--mlock` | off | Pin model in RAM, prevent swap |
-| `--mmap / --no-mmap` | on | Memory-map weights file |
+| Flag                 | Default          | Notes                              |
+| -------------------- | ---------------- | ---------------------------------- |
+| `-c, --ctx-size N`   | `0` (from model) | Total KV context window in tokens  |
+| `-n, --predict N`    | `-1` (∞)         | Max tokens to generate per request |
+| `--mlock`            | off              | Pin model in RAM, prevent swap     |
+| `--mmap / --no-mmap` | on               | Memory-map weights file            |
 
 ### GPU Offloading
 
-| Flag | Default | Notes |
-|------|---------|-------|
-| `-ngl, --gpu-layers N` | `auto` | Layers to put in VRAM; `all` = full offload |
-| `-dev, --device dev1,dev2` | auto | Specific GPU devices (see `--list-devices`) |
-| `-sm, --split-mode` | `layer` | `none` / `layer` / `row` / `tensor` |
-| `-ts, --tensor-split 3,1` | — | Proportion of model per GPU |
-| `--kv-offload / --no-kv-offload` | on | Offload KV cache to VRAM |
-| `--fit [on\|off]` | `on` | Auto-adjust params to fit in device memory |
-| `--fit-ctx N` | `4096` | Minimum ctx `--fit` is allowed to shrink to |
+| Flag                             | Default | Notes                                       |
+| -------------------------------- | ------- | ------------------------------------------- |
+| `-ngl, --gpu-layers N`           | `auto`  | Layers to put in VRAM; `all` = full offload |
+| `-dev, --device dev1,dev2`       | auto    | Specific GPU devices (see `--list-devices`) |
+| `-sm, --split-mode`              | `layer` | `none` / `layer` / `row` / `tensor`         |
+| `-ts, --tensor-split 3,1`        | —       | Proportion of model per GPU                 |
+| `--kv-offload / --no-kv-offload` | on      | Offload KV cache to VRAM                    |
+| `--fit [on\|off]`                | `on`    | Auto-adjust params to fit in device memory  |
+| `--fit-ctx N`                    | `4096`  | Minimum ctx `--fit` is allowed to shrink to |
 
 ### Performance
 
-| Flag | Default | Notes |
-|------|---------|-------|
-| `-b, --batch-size N` | `2048` | Logical batch size (prompt processing) |
-| `-ub, --ubatch-size N` | `512` | Physical micro-batch size |
-| `-fa, --flash-attn` | `auto` | Flash Attention (`on`/`off`/`auto`) |
-| `-np, --parallel N` | `-1` (auto) | Number of concurrent request slots |
-| `--cont-batching` | on | Dynamic batching across slots |
-| `--cache-type-k TYPE` | `f16` | KV cache K dtype: `f16`, `q8_0`, `q4_0`, etc. |
-| `--cache-type-v TYPE` | `f16` | KV cache V dtype (same options as K) |
-| `--threads N` | auto | CPU threads for generation |
-| `--threads-http N` | `-1` (auto) | Threads for HTTP request handling |
+| Flag                   | Default     | Notes                                         |
+| ---------------------- | ----------- | --------------------------------------------- |
+| `-b, --batch-size N`   | `2048`      | Logical batch size (prompt processing)        |
+| `-ub, --ubatch-size N` | `512`       | Physical micro-batch size                     |
+| `-fa, --flash-attn`    | `auto`      | Flash Attention (`on`/`off`/`auto`)           |
+| `-np, --parallel N`    | `-1` (auto) | Number of concurrent request slots            |
+| `--cont-batching`      | on          | Dynamic batching across slots                 |
+| `--cache-type-k TYPE`  | `f16`       | KV cache K dtype: `f16`, `q8_0`, `q4_0`, etc. |
+| `--cache-type-v TYPE`  | `f16`       | KV cache V dtype (same options as K)          |
+| `--threads N`          | auto        | CPU threads for generation                    |
+| `--threads-http N`     | `-1` (auto) | Threads for HTTP request handling             |
 
 ### Prompt Caching
 
-| Flag | Default | Notes |
-|------|---------|-------|
-| `--cache-prompt` | on | Reuse KV cache across requests with shared prefix |
-| `--cache-reuse N` | `0` | Min chunk size (tokens) to attempt KV-shift reuse |
-| `--cache-ram N` | `8192 MiB` | Max RAM for the prompt cache (`-1` = no limit) |
-| `--ctx-checkpoints N` | `32` | Context checkpoints per slot (enables rollback) |
+| Flag                  | Default    | Notes                                             |
+| --------------------- | ---------- | ------------------------------------------------- |
+| `--cache-prompt`      | on         | Reuse KV cache across requests with shared prefix |
+| `--cache-reuse N`     | `0`        | Min chunk size (tokens) to attempt KV-shift reuse |
+| `--cache-ram N`       | `8192 MiB` | Max RAM for the prompt cache (`-1` = no limit)    |
+| `--ctx-checkpoints N` | `32`       | Context checkpoints per slot (enables rollback)   |
 
 ### Model Identity & Routing
 
-| Flag | Notes |
-|------|-------|
+| Flag                      | Notes                                     |
+| ------------------------- | ----------------------------------------- |
 | `-a, --alias name1,name2` | Names this model responds to in API calls |
-| `--tags tag1,tag2` | Informational tags (not used for routing) |
+| `--tags tag1,tag2`        | Informational tags (not used for routing) |
 
 ### Reasoning / Thinking Models
 
-| Flag | Default | Notes |
-|------|---------|-------|
-| `--reasoning [on\|off\|auto]` | `auto` | Enable chain-of-thought thinking |
-| `--reasoning-format FORMAT` | `auto` | `none` / `deepseek` / `deepseek-legacy` |
-| `--reasoning-budget N` | `-1` (∞) | Token cap for `<think>` block; `0` = skip thinking |
+| Flag                          | Default  | Notes                                              |
+| ----------------------------- | -------- | -------------------------------------------------- |
+| `--reasoning [on\|off\|auto]` | `auto`   | Enable chain-of-thought thinking                   |
+| `--reasoning-format FORMAT`   | `auto`   | `none` / `deepseek` / `deepseek-legacy`            |
+| `--reasoning-budget N`        | `-1` (∞) | Token cap for `<think>` block; `0` = skip thinking |
 
 ### Logging
 
-| Flag | Notes |
-|------|-------|
-| `-v, --verbose` | Log everything |
+| Flag                     | Notes                                                       |
+| ------------------------ | ----------------------------------------------------------- |
+| `-v, --verbose`          | Log everything                                              |
 | `-lv, --log-verbosity N` | `0`=generic `1`=error `2`=warn `3`=info `4`=trace `5`=debug |
-| `--log-file FNAME` | Write logs to file |
-| `--log-colors` | Coloured output (default: auto-detect TTY) |
+| `--log-file FNAME`       | Write logs to file                                          |
+| `--log-colors`           | Coloured output (default: auto-detect TTY)                  |
 
 ---
 
@@ -148,17 +148,17 @@ Any CLI flag can be used as an INI key (strip `--`, keep hyphens). Per-model val
 
 The server exposes an **OpenAI-compatible** REST API on `http://host:port`.
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/v1/chat/completions` | POST | Chat completions (streaming supported) |
-| `/v1/completions` | POST | Raw text completions |
-| `/v1/embeddings` | POST | Embeddings (requires `--embeddings`) |
-| `/v1/models` | GET | List loaded models |
-| `/health` | GET | Server health (`{"status":"ok"}`) |
-| `/slots` | GET | Per-slot KV cache status |
-| `/metrics` | GET | Prometheus metrics (requires `--metrics`) |
-| `/props` | POST | Change properties at runtime (requires `--props`) |
-| `/lora-adapters` | POST | Hot-swap LoRA adapters |
+| Endpoint               | Method | Description                                       |
+| ---------------------- | ------ | ------------------------------------------------- |
+| `/v1/chat/completions` | POST   | Chat completions (streaming supported)            |
+| `/v1/completions`      | POST   | Raw text completions                              |
+| `/v1/embeddings`       | POST   | Embeddings (requires `--embeddings`)              |
+| `/v1/models`           | GET    | List loaded models                                |
+| `/health`              | GET    | Server health (`{"status":"ok"}`)                 |
+| `/slots`               | GET    | Per-slot KV cache status                          |
+| `/metrics`             | GET    | Prometheus metrics (requires `--metrics`)         |
+| `/props`               | POST   | Change properties at runtime (requires `--props`) |
+| `/lora-adapters`       | POST   | Hot-swap LoRA adapters                            |
 
 ### Quick smoke-test
 
@@ -253,11 +253,11 @@ There is **no single "unload everything" endpoint** — the API is intentionally
 
 ### Router-only management endpoints
 
-| Endpoint | Method | Body | Description |
-|----------|--------|------|-------------|
-| `/models` | GET | — | List all known models and their `status` (`loaded` / `unloaded`) |
-| `/models/load` | POST | `{"model":"<id>"}` | Load a specific model |
-| `/models/unload` | POST | `{"model":"<id>"}` | Unload a specific model, freeing its VRAM/RAM |
+| Endpoint         | Method | Body               | Description                                                      |
+| ---------------- | ------ | ------------------ | ---------------------------------------------------------------- |
+| `/models`        | GET    | —                  | List all known models and their `status` (`loaded` / `unloaded`) |
+| `/models/load`   | POST   | `{"model":"<id>"}` | Load a specific model                                            |
+| `/models/unload` | POST   | `{"model":"<id>"}` | Unload a specific model, freeing its VRAM/RAM                    |
 
 > `/v1/models` is the OAI-compat list endpoint (names only). `/models` is the router management endpoint — they are not the same.
 
@@ -273,7 +273,7 @@ Example response:
 {
   "data": [
     { "id": "qwen3.6:35b-IQ4_XS", "status": "loaded" },
-    { "id": "qwen3-coder:30b",    "status": "unloaded" }
+    { "id": "qwen3-coder:30b", "status": "unloaded" }
   ]
 }
 ```
