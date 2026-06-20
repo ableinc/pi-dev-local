@@ -36,6 +36,10 @@ Serve up to N models simultaneously. When a new model is requested and the limit
 llama-server --models-preset llama-models.ini --models-max 2 --port 9090
 ```
 
+```bash
+llama-server --models-preset ./llama-models.ini --models-max 1 --flash-attn on --port 9090
+```
+
 ---
 
 ## The INI Preset File
@@ -62,26 +66,25 @@ The best thinkingFormat to use for Gemma 4 models in vLLM and OpenAI-compatible 
 
 ### Why chat-template is Best
 
-* Official vLLM Requirements: [Gemma 4 models require](https://docs.vllm.ai/en/latest/features/reasoning_outputs/) enable_thinking: true passed inside their chat template keyword arguments (chat_template_kwargs) to trigger reasoning blocks.
-* The "Reasoning Effort" Connection: When using OpenAI compatibility layers, choosing chat-template instructs the engine to map the request parameters directly to the model's native jinja template settings.
+- Official vLLM Requirements: [Gemma 4 models require](https://docs.vllm.ai/en/latest/features/reasoning_outputs/) enable_thinking: true passed inside their chat template keyword arguments (chat_template_kwargs) to trigger reasoning blocks.
+- The "Reasoning Effort" Connection: When using OpenAI compatibility layers, choosing chat-template instructs the engine to map the request parameters directly to the model's native jinja template settings.
 
 ### How the Other Formats Compare
 
-* qwen-chat-template: Designed specifically for Qwen models to inject their respective formatting. While similar in function, it isn't optimized for the specific <|think|> block handling unique to Gemma 4.
-* reasoning_effort: This is standard for native OpenAI models (like the o-series) and Grok. Selecting this directly doesn't always automatically forward the necessary template kwargs to open-weight engines like vLLM.
-* openrouter, together, deepseek: These are provider-specific format wrappers. If you are hosting the Gemma 4 model locally or via a private instance, choosing these will format your payload incorrectly.
+- qwen-chat-template: Designed specifically for Qwen models to inject their respective formatting. While similar in function, it isn't optimized for the specific <|think|> block handling unique to Gemma 4.
+- reasoning_effort: This is standard for native OpenAI models (like the o-series) and Grok. Selecting this directly doesn't always automatically forward the necessary template kwargs to open-weight engines like vLLM.
+- openrouter, together, deepseek: These are provider-specific format wrappers. If you are hosting the Gemma 4 model locally or via a private instance, choosing these will format your payload incorrectly.
 
-
-| Format | Best For Model | Best Use Case / Notes |
-|---|---|---|
-| chat-template | Gemma 4, Llama 3.1/3.2/3.3/4 Instruct Cohere (north-mini) OpenAI | Passes reasoning tokens natively using the model's official jinja template variables. |
-| qwen-chat-template | Qwen2.5-VL, Qwen2.5-Math | Tailored specifically for Qwen models; handles specific block tags for Alibaba's vision and math architectures. |
-| reasoning_effort | OpenAI o1/o3-mini, Grok 2/3 | Best for proprietary reasoning models that use standard OpenAI API payload structures. |
-| deepseek | DeepSeek-R1, DeepSeek-V3 | Formats payloads specifically for DeepSeek's architecture, managing the output of the native reasoning tokens. |
-| openrouter | Any model hosted via OpenRouter | Only use if routing traffic explicitly through the OpenRouter proxy platform. |
-| together | Any model hosted via Together AI | Only use if deploying or querying through Together AI's API endpoints. |
-| zai | Any model hosted via Zero AI / ZAI | Only use if using Zero AI / ZAI platform tools. |
-| qwen | Qwen 1.5, Qwen 2 Base/Instruct | Hardcoded formatting logic meant purely for legacy or base versions of the Alibaba Qwen model family. |
+| Format             | Best For Model                                                   | Best Use Case / Notes                                                                                           |
+| ------------------ | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| chat-template      | Gemma 4, Llama 3.1/3.2/3.3/4 Instruct Cohere (north-mini) OpenAI | Passes reasoning tokens natively using the model's official jinja template variables.                           |
+| qwen-chat-template | Qwen2.5-VL, Qwen2.5-Math                                         | Tailored specifically for Qwen models; handles specific block tags for Alibaba's vision and math architectures. |
+| reasoning_effort   | OpenAI o1/o3-mini, Grok 2/3                                      | Best for proprietary reasoning models that use standard OpenAI API payload structures.                          |
+| deepseek           | DeepSeek-R1, DeepSeek-V3                                         | Formats payloads specifically for DeepSeek's architecture, managing the output of the native reasoning tokens.  |
+| openrouter         | Any model hosted via OpenRouter                                  | Only use if routing traffic explicitly through the OpenRouter proxy platform.                                   |
+| together           | Any model hosted via Together AI                                 | Only use if deploying or querying through Together AI's API endpoints.                                          |
+| zai                | Any model hosted via Zero AI / ZAI                               | Only use if using Zero AI / ZAI platform tools.                                                                 |
+| qwen               | Qwen 1.5, Qwen 2 Base/Instruct                                   | Hardcoded formatting logic meant purely for legacy or base versions of the Alibaba Qwen model family.           |
 
 > These guides are mostly for vLLM users, but the same principles apply to llama.cpp and Ollama when using their reasoning features. Always check your engine's documentation for any specific requirements around reasoning formats and template variables.
 
@@ -173,15 +176,15 @@ These flags are especially useful when running with large `--ctx-size` values (e
 
 > **Quick reference — memory impact of KV cache types** (per token, per head-dim-128 model, per layer):
 >
-> | Type | Memory per (K,V) pair | 128K context × 32 layers (8×7B) |
-> |--------|----------------------|----------------------------------|
-> | `f16` | baseline × 2 | ~16 GB |
-> | `bf16` | baseline × 2 | ~16 GB |
-> | `q8_0` | baseline × 0.5 | ~8 GB |
-> | `q5_1` | baseline × 0.3125 | ~5 GB |
-> | `q4_0` | baseline × 0.25 | ~4 GB |
-> | `q4_1` | baseline × 0.28125 | ~4.5 GB |
-> | `iq4_nl` | baseline × 0.25 | ~4 GB |
+> | Type     | Memory per (K,V) pair | 128K context × 32 layers (8×7B) |
+> | -------- | --------------------- | ------------------------------- |
+> | `f16`    | baseline × 2          | ~16 GB                          |
+> | `bf16`   | baseline × 2          | ~16 GB                          |
+> | `q8_0`   | baseline × 0.5        | ~8 GB                           |
+> | `q5_1`   | baseline × 0.3125     | ~5 GB                           |
+> | `q4_0`   | baseline × 0.25       | ~4 GB                           |
+> | `q4_1`   | baseline × 0.28125    | ~4.5 GB                         |
+> | `iq4_nl` | baseline × 0.25       | ~4 GB                           |
 
 ### GPU Offloading
 
@@ -449,8 +452,8 @@ cont-batching  = true
 
 ## Resources
 
-| Resource                                          | Link                                                                       |
-| ------------------------------------------------- | -------------------------------------------------------------------------- |
+| Resource                                          | Link                                                                         |
+| ------------------------------------------------- | ---------------------------------------------------------------------------- |
 | **llama.cpp server README** (full flag reference) | <https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md>   |
 | **llama.cpp CLI README** (llama-cli flags)        | <https://github.com/ggml-org/llama.cpp/blob/master/tools/cli/README.md>      |
 | **Function calling docs**                         | <https://github.com/ggml-org/llama.cpp/blob/master/docs/function-calling.md> |
