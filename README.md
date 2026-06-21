@@ -160,8 +160,8 @@ llama-server \
   --cache-type-v q8_0 \
   # Context & batching
   --ctx-size    32768 \
-  --batch-size  4096 \
-  --ubatch-size 4096 \
+  --batch-size  2048 \
+  --ubatch-size 1024 \
   # Server / agentic config
   --parallel    1 \
   --cont-batching \
@@ -174,6 +174,20 @@ llama-server \
   --repeat-penalty 1.0 \
   --host 127.0.0.1 \
   --port 9090
+```
+
+> Note: These settings are seeing between 68-70 tokens per second. See below:
+
+```bash
+[51921] 6.32.171.440 I slot print_timing: id  0 | task 9769 | n_decoded =    100, tg =  70.29 t/s
+[51921] 6.35.176.085 I slot print_timing: id  0 | task 9769 | n_decoded =    309, tg =  69.79 t/s
+[51921] 6.38.184.391 I slot print_timing: id  0 | task 9769 | n_decoded =    517, tg =  69.53 t/s
+[51921] 6.41.194.457 I slot print_timing: id  0 | task 9769 | n_decoded =    725, tg =  69.41 t/s
+[51921] 6.44.204.894 I slot print_timing: id  0 | task 9769 | n_decoded =    933, tg =  69.34 t/s
+[51921] 6.47.208.322 I slot print_timing: id  0 | task 9769 | n_decoded =   1139, tg =  69.20 t/s
+[51921] 6.50.217.889 I slot print_timing: id  0 | task 9769 | n_decoded =   1345, tg =  69.08 t/s
+[51921] 6.53.229.140 I slot print_timing: id  0 | task 9769 | n_decoded =   1551, tg =  68.99 t/s
+[51921] 6.56.240.335 I slot print_timing: id  0 | task 9769 | n_decoded =   1756, tg =  68.89 t/s
 ```
 
 **For Gemma 4-12B**
@@ -213,9 +227,38 @@ llama-server \
 
 The default `layer` split mode means that GPU 0 owns the first N layers and GPU 1 owns the rest - they pipeline sequentially. With `row` split, both GPUs work on *every layer simultaneously*, splitting the weight matrices along the row dimension. For MoE, where the expert weights dominate total size, row split keeps both cards active on every forward pass instead of one sitting idle while the other processes its layers. This is critical for maximizing throughput on VRAM-constrained hardware.
 
-`--batch-size 4096` and `--ubatch-size 4096`
+`--batch-size 2048` and `--ubatch-size 1024`
 
-For MoE inference, the defaults (2048 & 512) are too small. Setting both to the same value (4096 )is the community recommendation. This dramatically imporoves prefill speed on long code context. Ingesting 10k+ token repo context goes much faster, which is noticeable in agentic coding loops.
+For this Qwen3.6 35B multimodal profile on dual 3060 GPUs, this is the safer baseline to avoid decode-time Vulkan memory spikes. In testing, `4096/4096` can load successfully but still fail on first decode with `vk::Device::allocateMemory: ErrorOutOfDeviceMemory`.
+
+Tuning ladder:
+
+1. Start at `2048/1024` (recommended baseline).
+2. If decode-time OOM persists, lower to `1024/512`.
+3. If still unstable, reduce `--ctx-size` (for example `24576`) or use `q4_0` KV cache.
+4. If stable and you need higher prefill throughput, raise one knob at a time and retest.
+
+### Higher Context Profiles (~40 tok/s target)
+
+If 32K context is too small for your coding workflow, use one of these profiles for `Qwen3.6-35B-A3B-UD-IQ4_XS` on dual 3060 GPUs.
+
+| Profile | `--ctx-size` | `--cache-type-k/v` | `--batch-size` | `--ubatch-size` | Expected Throughput | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| 64K Balanced | `65536` | `q4_0` | `1536` | `768` | ~40-50 tok/s | Best first step when moving up from 32K |
+| 64K Safe | `65536` | `q4_0` | `1024` | `512` | ~38-45 tok/s | Better stability margin if decode OOM appears |
+| 96K Stretch | `98304` | `q4_0` | `1024` | `512` | ~30-40 tok/s | Only for larger context needs; latency variance increases |
+
+Rollout sequence:
+
+1. Start with 64K Balanced.
+2. If you see decode-time OOM (`vk::Device::allocateMemory: ErrorOutOfDeviceMemory`), switch to 64K Safe.
+3. If stable and you still need more room, test 96K Stretch.
+4. If throughput falls below target, enable MTP and re-benchmark.
+
+MTP note for this section:
+
+- Add `--spec-type draft-mtp --spec-draft-n-max 2` to recover throughput at larger contexts.
+- Keep `--parallel 1` when using MTP.
 
 > Source: https://huggingface.co/blog/Doctor-Shotgun/llamacpp-moe-offload-guide
 
@@ -257,7 +300,7 @@ Look at the model card description for words like "multimodal", "vision", "image
 
 3. `Dense or MoE` (Determines Split Mode & Batch Size)
 
-Model card architecture section should contain all this information. **Dense** requires `--split-mode layer`, which is the default pipeline between GPUs. Models like `gemma 4-12B` are Dense. **MoE** (Mixture of Experts) models require `--split-mode row` to keep both GPUs active on every layer, and a larger batch size (e.g. `4096`) to efficiently utilize the experts.
+Model card architecture section should contain all this information. **Dense** requires `--split-mode layer`, which is the default pipeline between GPUs. Models like `gemma 4-12B` are Dense. **MoE** (Mixture of Experts) models require `--split-mode row` to keep both GPUs active on every layer. Start with conservative batching (`2048/1024`) and increase gradually only after stability checks.
 
 4. `Read the Model's Own Sampling Recommendations`
 
