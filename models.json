@@ -146,8 +146,8 @@
 			},
 			"models": [
 				{
-					"id": "Qwen3.6-35B-A3B-UD-IQ4_XS",
-					"name": "Qwen3.6 35B (A3B UD IQ4_XS - Local)",
+					"id": "qwen36-35b-32k",
+					"name": "Qwen3.6 35B (32K - Local)",
 					"reasoning": true,
 					"input": ["text"],
 					"contextWindow": 32768,
@@ -171,7 +171,82 @@
 					}
 				},
 				{
-					"id": "qwen3-coder:30b",
+					"id": "qwen36-35b-64k-balanced",
+					"name": "Qwen3.6 35B (64K Balanced - Local)",
+					"reasoning": true,
+					"input": ["text"],
+					"contextWindow": 65536,
+					"maxTokens": 4096,
+					"compat": {
+						"thinkingFormat": "qwen"
+					},
+					"thinkingLevelMap": {
+						"off": null,
+						"minimal": "minimal",
+						"low": "low",
+						"medium": "medium",
+						"high": "high",
+						"xhigh": "max"
+					},
+					"cost": {
+						"input": 0,
+						"output": 0,
+						"cacheRead": 0,
+						"cacheWrite": 0
+					}
+				},
+				{
+					"id": "qwen36-35b-64k-safe",
+					"name": "Qwen3.6 35B (64K Safe - Local)",
+					"reasoning": true,
+					"input": ["text"],
+					"contextWindow": 65536,
+					"maxTokens": 4096,
+					"compat": {
+						"thinkingFormat": "qwen"
+					},
+					"thinkingLevelMap": {
+						"off": null,
+						"minimal": "minimal",
+						"low": "low",
+						"medium": "medium",
+						"high": "high",
+						"xhigh": "max"
+					},
+					"cost": {
+						"input": 0,
+						"output": 0,
+						"cacheRead": 0,
+						"cacheWrite": 0
+					}
+				},
+				{
+					"id": "qwen36-35b-96k-stretch",
+					"name": "Qwen3.6 35B (96K Stretch - Local)",
+					"reasoning": true,
+					"input": ["text"],
+					"contextWindow": 98304,
+					"maxTokens": 4096,
+					"compat": {
+						"thinkingFormat": "qwen"
+					},
+					"thinkingLevelMap": {
+						"off": null,
+						"minimal": "minimal",
+						"low": "low",
+						"medium": "medium",
+						"high": "high",
+						"xhigh": "max"
+					},
+					"cost": {
+						"input": 0,
+						"output": 0,
+						"cacheRead": 0,
+						"cacheWrite": 0
+					}
+				},
+				{
+					"id": "qwen3-coder-30b",
 					"name": "Qwen3 Coder 30B (Local)",
 					"reasoning": true,
 					"input": ["text"],
@@ -196,7 +271,7 @@
 					}
 				},
 				{
-					"id": "qwen3.5:9b",
+					"id": "qwen35-9b",
 					"name": "Qwen3.5 9B (Local)",
 					"reasoning": true,
 					"input": ["text", "image"],
@@ -221,7 +296,7 @@
 					}
 				},
 				{
-					"id": "gpt-oss:20b",
+					"id": "gpt-oss-20b",
 					"name": "GPT-OSS 20B (Local)",
 					"reasoning": true,
 					"input": ["text"],
@@ -246,7 +321,32 @@
 					}
 				},
 				{
-					"id": "gemma-4-12b-it-UD-Q4_K_XL",
+					"id": "gemma4-12b",
+					"name": "Gemma 4 12B (Ollama Blob - Local)",
+					"reasoning": true,
+					"input": ["text", "image"],
+					"contextWindow": 262144,
+					"maxTokens": 32000,
+					"compat": {
+						"thinkingFormat": "chat-template"
+					},
+					"thinkingLevelMap": {
+						"off": null,
+						"minimal": "minimal",
+						"low": "low",
+						"medium": "medium",
+						"high": "high",
+						"xhigh": "max"
+					},
+					"cost": {
+						"input": 0,
+						"output": 0,
+						"cacheRead": 0,
+						"cacheWrite": 0
+					}
+				},
+				{
+					"id": "gemma4-12b-q4_k_xl",
 					"name": "Gemma 4 12B Q4_K XL (Local)",
 					"reasoning": true,
 					"input": ["text", "image"],
@@ -271,7 +371,7 @@
 					}
 				},
 				{
-					"id": "north-mini-code-1.0:q4_K_M",
+					"id": "north-mini-code-1.0-q4_k_m",
 					"name": "North Mini Code 1.0 (Local)",
 					"reasoning": true,
 					"input": ["text"],

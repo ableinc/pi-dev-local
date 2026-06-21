@@ -238,7 +238,7 @@ Tuning ladder:
 3. If still unstable, reduce `--ctx-size` (for example `24576`) or use `q4_0` KV cache.
 4. If stable and you need higher prefill throughput, raise one knob at a time and retest.
 
-### Higher Context Profiles (~40 tok/s target)
+#### Higher Context Profiles (~40 tok/s target)
 
 If 32K context is too small for your coding workflow, use one of these profiles for `Qwen3.6-35B-A3B-UD-IQ4_XS` on dual 3060 GPUs.
 
