@@ -148,8 +148,8 @@ For Pi.dev, keep `models.json` `contextWindow` aligned with this budget (32K for
 
 ```bash
 llama-server \
-  --model       ./.cache/llama.cpp/Qwen3.6-35B-A3B-UD-IQ4_XS.gguf \
-  --mmproj      ./.cache/llama.cpp/Qwen3.6-35B-mmproj-F16.gguf \
+  --model       ~/.cache/llama.cpp/Qwen3.6-35B-A3B-UD-IQ4_XS.gguf \
+  --mmproj      ~/.cache/llama.cpp/Qwen3.6-35B-mmproj-F16.gguf \
   # GPU offload
   --n-gpu-layers 99 \
   --split-mode  row \
@@ -182,8 +182,8 @@ The Gemma4-12B model is only ~7 GB in size, which leaves ~16 GB of KV headroom o
 
 ```bash
 llama-server \
-	--model       ./.cache/llama.cpp//gemma-4-12b-it-UD-Q4_K_XL.gguf \
-	--mmproj      ./.cache/llama.cpp/gemma4-12B-mmproj-F16.gguf \
+	--model       ~/.cache/llama.cpp//gemma-4-12b-it-UD-Q4_K_XL.gguf \
+	--mmproj      ~/.cache/llama.cpp/gemma4-12B-mmproj-F16.gguf \
   # Single GPU — model fits in 12GB with 128K context
   --n-gpu-layers 99 \
   # Attention + KV
@@ -313,6 +313,7 @@ You get `n_layers`, `n_kv_heads`, and `head_dim` using the llama dump script.
 ```bash
 ./llama-gguf-dump ~/.cache/llama.cpp/Qwen3.6-35B-A3B-UD-IQ4_XS.gguf | grep -E "block_count|attention.head_count_kv|attention.key_length"
 ```
+
 **Output**
 
 ```bash
@@ -329,7 +330,7 @@ The KV cache fits within my `~4.1 GB` of headroom.
 You can download the `llama-gguf-dump` tool here: https://github.com/ggml-org/llama.cpp/blob/master/gguf-py/gguf/scripts/gguf_dump.py
 
 
-> Note: Adjust `--ctx-size` and relaunch until the allocation fits your headroom.
+> Note: Adjust `--ctx-size` and relaunch until the allocation fits your headroom. It's worth noting that Google's Gemma 4 models use Hybrid Attention Mechanism and various other mechanisms to shrink their model size. Because of this, the calculations above cannot be used to determine it's KV Cache Size.
 
 
 ---
