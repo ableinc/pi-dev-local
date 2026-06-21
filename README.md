@@ -97,7 +97,7 @@ The best thinkingFormat to use for Gemma 4 models in vLLM and OpenAI-compatible 
 
 ## VRAM Budget
 
-This section will use real-world scenario of how to determine serve the `Qwen3.6-35B-A3B-UD-IQ4_XS` model with 24 GB VRAM between dual 3060 RTX (12 GB) GPUs.
+This section will use real-world scenario of how to serve the `Qwen3.6-35B-A3B-UD-IQ4_XS` model with 24 GB VRAM between dual 3060 RTX (12 GB) GPUs.
 
 | Component | VRAM |
 | --------- | ---- |
@@ -106,18 +106,33 @@ This section will use real-world scenario of how to determine serve the `Qwen3.6
 | CUDA runtime + compute buffer | ~0.8 GB |
 | **Available for KV cache** | **~4.1 GB** |
 
-With Q8_0 KV cache, GQA + MoE sparse activation this is efficient enough to serve 32K context with some room to sparse.. Only ~200 MB of KV cache per slot at 8K context and ~800 MB at 32K, which fits within the ~4.1 GB budget when using quantization and offloading; giving enough headroom for 2-3 slots to be active simultaneously without hitting OOM (at 32K context).
+With Q8_0 KV cache, GQA + MoE sparse activation this is efficient enough to serve 32K context with some room to spare.
 
 > Source: https://localllm.in/blog/llamacpp-vram-requirements-for-local-llms
 
+### Target Context Size & Calculation
+
+| Target Context | Required --ctx-size Flag | Exact Token Calculation |
+|---|---|---|
+| 16k | `--ctx-size 16384` | $16 \times 1024$ |
+| 32k | `--ctx-size 32768` | $32 \times 1024$ |
+| 64k | `--ctx-size 65536` | $64 \times 1024$ |
+| 128k | `--ctx-size 131072` | $128 \times 1024$ |
+| 256k | `--ctx-size 262144` | $256 \times 1024$ |
+| 488k | `--ctx-size 500000` | $488.28 \times 1024$ (Exact Decimal Align) |
+| 500k | `--ctx-size 524288` | $500 \times 1024$ |
+| 1M | `--ctx-size 1048576` | $1024 \times 1024$ |
+
 ### Context Size vs KV Cache Tradeoff
+
+Using `Qwen3.6-35B-A3B-UD-IQ4_XS.gguf` for example.
 
 | `--ctx-size` | KV per slot (Q8_0) | Max slots | Notes |
 | ------------ | ------------------ | --------- | ----- |
-| 16K | ~400 MB | 8+ | Fine for single-file coding |
-| 32K | ~800 MB | 4-5 | Sweet spot for most agentic tasks (coding) |
-| 64K | ~1.6 GB | 2 | Large repo context; tight on 24 GB VRAM |
-| 128K | ~3.2 GB | 1 | Likely Out of Memory (OOM) with mmproj overhead; consider q4_0 for better fit - only if you need it |
+| 16K | ~687.87 MB | 5 | Fine for single-file coding |
+| 32K | ~1.38 GB | 2-3 | Sweet spot for most agentic tasks (coding) |
+| 64K | ~2.752 GB | 1-2 | Large repo context; tight on 24 GB VRAM. RAM offloading will occur. |
+| 128K | ~5.5 GB | 0 | Out of Memory (OOM). RAM offloading will occur. Consider q4_0 for better fit. |
 
 ### mmproj Is *Required* (for multimodal models)
 
@@ -265,13 +280,13 @@ KV headroom = 4.1 GB
 
 Then calculate max context from KV headroom:
 
-$$\text{KV Cache Size (Bytes)} = 2 \times n\_layers \times n\_kv\_heads \times head\_dim \times context\_length \times bytes\_per\_element$$
+$$\text{KV Cache Size (Bytes)} = 2 \times \text{n-layers} \times \text{n-kv-heads} \times \text{head-dim} \times \text{context-length} \times \text{bytes-per-element}$$
 
 * **2**: Accounts for storing both the Key and the Value states.
 * **n_layers**: Read from block_count.
 * **n_kv_heads**: Read from attention.head_count_kv.
-* **head_dim**: Read from attention.key_length (or calculated as $\frac{\text{embedding\_length}}{\text{attention.head\_count}}$).
-* **context_length**: Your --ctx-size runtime parameter (e.g., 512 tokens).
+* **head_dim**: Read from attention.key_length (or calculated as $\frac{\text{embedding-length}}{\text{attention-head-count}}$).
+* **context_length**: Your `--ctx-size` runtime parameter (e.g., 32768 tokens).
 * **bytes_per_element**: The precision data type of your cache. By default, llama.cpp uses 16-bit float (F16). See [Cache Type Conversion]("#cache-type-conversion") table.
 
 #### Cache Type Conversion
