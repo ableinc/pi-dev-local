@@ -296,6 +296,9 @@ $$\text{KV Cache Size (Bytes)} = 2 \times \text{n-layers} \times \text{n-kv-head
 | F16 / B16 | 2.0 | 16 |
 | q8_0 | 1.0 | 8 |
 | q4_0 | 0.5 | 4 |
+| iq4_nl | ~0.51 | ~4.1 |
+| q5_1 | 6 | 48 |
+| q4_1 | 5 | 40 |
 
 #### Using the `llama-gguf-dump` tool (recommended)
 
@@ -409,53 +412,11 @@ These flags are especially useful when running with large `--ctx-size` values (e
 | `--prio-batch N`                   | `0`                  | Priority for batch threads (same scale as `--prio`).                                                                                                                            |
 | `--poll-batch N`                   | same as --poll       | Polling level for batch thread work wait (0 = no polling). Reduces CPU usage when idle.                                                                                         |
 | `--context-shift`                  | off                  | Enable context shift on infinite generation. Slides context forward instead of truncating. Useful for streaming/continuous generation.                                          |
-| `--cache-prompt`                   | enabled              | Enable prompt caching. Reuse KV cache across requests with shared prefix. Keep enabled for multi-request workloads.                                                             |
+| `--cache-prompt`                   | on              | Enable prompt caching. Reuse KV cache across requests with shared prefix. Keep enabled for multi-request workloads.                                                             |
 | `--cache-reuse N`                  | `0`                  | Min chunk size (tokens) to attempt KV-shift cache reuse. Set higher (e.g. `512`) when prompts have large shared prefixes.                                                       |
 | `-sps, --slot-prompt-similarity N` | `0.10`               | How much a new prompt must match an existing slot to reuse it. Increase (e.g. `0.30`) to be more selective; decrease for more reuse.                                            |
 | `-fitc, --fit-ctx N`               | `4096`               | Minimum ctx size `--fit` can shrink to. Raise to prevent aggressive shrinking on large context workloads.                                                                       |
 | `-fitt, --fit-target MiB`          | `1024`               | Target VRAM margin per GPU. Increase to give KV cache more breathing room.                                                                                                      |
-
-> **Quick reference — memory impact of KV cache types** (per token, per head-dim-128 model, per layer):
->
-> | Type     | Memory per (K,V) pair | 128K context × 32 layers (8×7B) |
-> | -------- | --------------------- | ------------------------------- |
-> | `f16`    | baseline × 2          | ~16 GB                          |
-> | `bf16`   | baseline × 2          | ~16 GB                          |
-> | `q8_0`   | baseline × 0.5        | ~8 GB                           |
-> | `q5_1`   | baseline × 0.3125     | ~5 GB                           |
-> | `q4_0`   | baseline × 0.25       | ~4 GB                           |
-> | `q4_1`   | baseline × 0.28125    | ~4.5 GB                         |
-> | `iq4_nl` | baseline × 0.25       | ~4 GB                           |
-
-### GPU Offloading
-
-| Flag                   | Default | Notes                                       |
-| ---------------------- | ------- | ------------------------------------------- |
-| `-ngl, --gpu-layers N` | `auto`  | Layers to put in VRAM; `all` = full offload |
-
-### Prompt Caching
-
-| Flag                  | Default    | Notes                                             |
-| --------------------- | ---------- | ------------------------------------------------- |
-| `--cache-prompt`      | on         | Reuse KV cache across requests with shared prefix |
-| `--cache-reuse N`     | `0`        | Min chunk size (tokens) to attempt KV-shift reuse |
-| `--cache-ram N`       | `8192 MiB` | Max RAM for the prompt cache (`-1` = no limit)    |
-| `--ctx-checkpoints N` | `32`       | Context checkpoints per slot (enables rollback)   |
-
-### Model Identity & Routing
-
-| Flag                      | Notes                                     |
-| ------------------------- | ----------------------------------------- |
-| `-a, --alias name1,name2` | Names this model responds to in API calls |
-| `--tags tag1,tag2`        | Informational tags (not used for routing) |
-
-### Reasoning / Thinking Models
-
-| Flag                          | Default  | Notes                                              |
-| ----------------------------- | -------- | -------------------------------------------------- |
-| `--reasoning [on\|off\|auto]` | `auto`   | Enable chain-of-thought thinking                   |
-| `--reasoning-format FORMAT`   | `auto`   | `none` / `deepseek` / `deepseek-legacy`            |
-| `--reasoning-budget N`        | `-1` (∞) | Token cap for `<think>` block; `0` = skip thinking |
 
 ### Logging
 
@@ -550,22 +511,6 @@ llama-server -m qwq.gguf \
   --reasoning-budget 2048 \
   --ctx-size 32768 \
   --port 9090
-```
-
----
-
-## Environment Variables
-
-Every flag has a corresponding `LLAMA_ARG_*` env var (shown in `--help`). Useful for containers:
-
-```bash
-export LLAMA_ARG_MODEL=/models/qwen.gguf
-export LLAMA_ARG_CTX_SIZE=131072
-export LLAMA_ARG_N_GPU_LAYERS=99
-export LLAMA_ARG_HOST=0.0.0.0
-export LLAMA_ARG_PORT=9090
-export LLAMA_API_KEY=sk-secret
-llama-server
 ```
 
 ---
@@ -671,41 +616,3 @@ Router mode has `--models-autoload` **on** by default. If any client sends a req
 
 - Stop all client traffic first (agents, Open WebUI, scripts)
 - Or restart the server with `--no-models-autoload` to disable on-demand loading entirely
-
----
-
-## INI Key Reference (common ones)
-
-INI keys are CLI flags with `--` stripped — **hyphens, not underscores**.
-
-```ini
-[*]
-ctx-size       = 32768
-gpu-layers     = all
-flash-attn     = on
-cache-type-k   = q8_0
-cache-type-v   = q8_0
-parallel       = 4
-cont-batching  = true
-```
-
----
-
-## Resources
-
-| Resource                                          | Link                                                                         |
-| ------------------------------------------------- | ---------------------------------------------------------------------------- |
-| **llama.cpp server README** (full flag reference) | <https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md>   |
-| **llama.cpp CLI README** (llama-cli flags)        | <https://github.com/ggml-org/llama.cpp/blob/master/tools/cli/README.md>      |
-| **Function calling docs**                         | <https://github.com/ggml-org/llama.cpp/blob/master/docs/function-calling.md> |
-| **Multimodal docs**                               | <https://github.com/ggml-org/llama.cpp/blob/master/docs/multimodal.md>       |
-| **NUMA optimization guide**                       | <https://github.com/ggml-org/llama.cpp/issues/1437>                          |
-| **Server changelog**                              | <https://github.com/ggml-org/llama.cpp/issues/9291>                          |
-| **KV cache checkpoints (SWA)**                    | <https://github.com/ggml-org/llama.cpp/pull/15293>                           |
-| **Prompt cache / cache-ram**                      | <https://github.com/ggml-org/llama.cpp/pull/16391>                           |
-| **Full-size SWA cache**                           | <https://github.com/ggml-org/llama.cpp/pull/13194>                           |
-| **Adaptive-p sampler**                            | <https://github.com/ggml-org/llama.cpp/pull/17927>                           |
-| **KV cache shifting (cache-reuse)**               | <https://ggml.ai/f0.png>                                                     |
-| **Docker image**                                  | <https://github.com/ggml-org/llama.cpp/pkgs/container/llama.cpp>             |
-| **llama.cpp docs (general)**                      | <https://github.com/ggml-org/llama.cpp/tree/master/docs>                     |
-| **llama.cpp wiki (templates, quantization)**      | <https://github.com/ggml-org/llama.cpp/wiki>                                 |
