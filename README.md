@@ -238,14 +238,14 @@ Tuning ladder:
 3. If still unstable, reduce `--ctx-size` (for example `24576`) or use `q4_0` KV cache.
 4. If stable and you need higher prefill throughput, raise one knob at a time and retest.
 
-#### Higher Context Profiles (~40 tok/s target)
+#### Higher Context Profiles
 
 If 32K context is too small for your coding workflow, use one of these profiles for `Qwen3.6-35B-A3B-UD-IQ4_XS` on dual 3060 GPUs.
 
 | Profile | `--ctx-size` | `--cache-type-k/v` | `--batch-size` | `--ubatch-size` | Expected Throughput | Notes |
 | --- | --- | --- | --- | --- | --- | --- |
-| 64K Balanced | `65536` | `q4_0` | `1536` | `768` | ~40-50 tok/s | Best first step when moving up from 32K |
-| 64K Safe | `65536` | `q4_0` | `1024` | `512` | ~38-45 tok/s | Better stability margin if decode OOM appears |
+| 64K Balanced | `65536` | `q4_0` | `1536` | `768` | ~55-58 tok/s | Best first step when moving up from 32K |
+| 64K Safe | `65536` | `q4_0` | `1024` | `512` | ~45+ tok/s | Better stability margin if decode OOM appears |
 | 96K Stretch | `98304` | `q4_0` | `1024` | `512` | ~30-40 tok/s | Only for larger context needs; latency variance increases |
 
 Rollout sequence:
