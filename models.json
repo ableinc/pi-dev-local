@@ -151,7 +151,7 @@
 					"name": "Qwen3.6 35B (A3B UD IQ4_XS - Local)",
 					"reasoning": true,
 					"input": ["text"],
-					"contextWindow": 262144,
+					"contextWindow": 131072,
 					"maxTokens": 32768,
 					"compat": {
 						"thinkingFormat": "qwen"
@@ -176,7 +176,7 @@
 					"name": "Qwen3 Coder 30B (Local)",
 					"reasoning": true,
 					"input": ["text"],
-					"contextWindow": 262144,
+					"contextWindow": 131072,
 					"maxTokens": 32000,
 					"compat": {
 						"thinkingFormat": "qwen"
@@ -201,7 +201,7 @@
 					"name": "Qwen3.5 9B (Local)",
 					"reasoning": true,
 					"input": ["text", "image"],
-					"contextWindow": 262144,
+					"contextWindow": 131072,
 					"maxTokens": 32000,
 					"compat": {
 						"thinkingFormat": "qwen"
@@ -247,12 +247,12 @@
 					}
 				},
 				{
-					"id": "gemma-4-12B-it-qat-UD-Q4_K_XL",
+					"id": "gemma-4-12b-it-UD-Q4_K_XL.gguf",
 					"alias": "premium",
 					"name": "Gemma 4 12B Q4_K XL (Local)",
 					"reasoning": true,
 					"input": ["text", "image"],
-					"contextWindow": 256000,
+					"contextWindow": 131072,
 					"maxTokens": 32768,
 					"compat": {
 						"thinkingFormat": "chat-template"

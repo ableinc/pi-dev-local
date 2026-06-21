@@ -1,5 +1,7 @@
 # Ollama & Llama.cpp — Crash Course
 
+Much of the documentation is intended for `llama.cpp` due to its performance. While `Ollama` is a great choice, its opinionated and handles much of this for you under the hood. It does have configurable options, so use their documentation (if not referenced here) to tweak your settings. `llama.cpp` can use `Ollama` downloaded models. Refer the [llama-models.ini]("./llama-models.ini") and Pi.dev [models.json]("./models.json").
+
 ## Model Locations
 
 | Backend    | Path                                      |
@@ -20,7 +22,7 @@ ollama run <model>
 
 ---
 
-## Serving with `llama-server`
+## Serving with `llama-server` - Quick Start
 
 ### Single model (simplest)
 
@@ -44,6 +46,8 @@ llama-server --models-preset ./llama-models.ini --models-max 1 --flash-attn on -
 
 ## The INI Preset File
 
+Many of the `llama-server` CLI flags can be set in an INI file and loaded with `--models-preset`. This is especially useful for router mode, where you can define multiple models with different settings in one place.
+
 ```ini
 # Global defaults applied to every model section
 [*]
@@ -64,7 +68,7 @@ Per-model values override `[*]` defaults.
 
 The best thinkingFormat to use for Gemma 4 models in vLLM and OpenAI-compatible engines is chat-template.
 
-### Why chat-template is Best
+### Why chat-template is Best (Gemma 4)
 
 - Official vLLM Requirements: [Gemma 4 models require](https://docs.vllm.ai/en/latest/features/reasoning_outputs/) enable_thinking: true passed inside their chat template keyword arguments (chat_template_kwargs) to trigger reasoning blocks.
 - The "Reasoning Effort" Connection: When using OpenAI compatibility layers, choosing chat-template instructs the engine to map the request parameters directly to the model's native jinja template settings.
@@ -87,6 +91,219 @@ The best thinkingFormat to use for Gemma 4 models in vLLM and OpenAI-compatible 
 | qwen               | Qwen 1.5, Qwen 2 Base/Instruct                                   | Hardcoded formatting logic meant purely for legacy or base versions of the Alibaba Qwen model family.           |
 
 > These guides are mostly for vLLM users, but the same principles apply to llama.cpp and Ollama when using their reasoning features. Always check your engine's documentation for any specific requirements around reasoning formats and template variables.
+
+---
+
+## VRAM Budget
+
+This section will use real-world scenario of how to determine serve the `Qwen3.6-35B-A3B-UD-IQ4_XS` model with 24 GB VRAM between dual 3060 RTX (12 GB) GPUs.
+
+| Component | VRAM |
+| --------- | ---- |
+| Model weights (UD-IQ4_XS) | ~18.2 GB |
+| mmproj vision sidecar (F16) | ~0.9 GB |
+| CUDA runtime + compute buffer | ~0.8 GB |
+| **Available for KV cache** | **~4.1 GB** |
+
+With Q8_0 KV cache, GQA + MoE sparse activation this is efficient enough to serve 32K context with some room to sparse.. Only ~200 MB of KV cache per slot at 8K context and ~800 MB at 32K, which fits within the ~4.1 GB budget when using quantization and offloading; giving enough headroom for 2-3 slots to be active simultaneously without hitting OOM (at 32K context).
+
+> Source: https://localllm.in/blog/llamacpp-vram-requirements-for-local-llms
+
+### Context Size vs KV Cache Tradeoff
+
+| `--ctx-size` | KV per slot (Q8_0) | Max slots | Notes |
+| ------------ | ------------------ | --------- | ----- |
+| 16K | ~400 MB | 8+ | Fine for single-file coding |
+| 32K | ~800 MB | 4-5 | Sweet spot for most agentic tasks (coding) |
+| 64K | ~1.6 GB | 2 | Large repo context; tight on 24 GB VRAM |
+| 128K | ~3.2 GB | 1 | Likely Out of Memory (OOM) with mmproj overhead; consider q4_0 for better fit - only if you need it |
+
+### mmproj Is *Required* (for multimodal models)
+
+The mmproj vision sidecar is required for any model with a vision component (e.g. Qwen3.6-35B-A3B-UD-IQ4_XS) — it handles the image processing and projection into the model's embedding space. It typically uses around 0.9 GB of VRAM when running, which must be accounted for in the overall VRAM budget.
+
+This means, when serving the model over `llama.cpp` (llama-server) you need to serve the main GGUF (model) and an mmproj GGUF (vision sidecar) together. Bleeding-edge builds of `llama.cpp` won't load the model without `--mmproj` specified.
+
+### Recommended llama-server Command
+
+This is strictly for the Qwen3.6-35B-A3B-UD-IQ4_XS model on dual 3060 RTX (12 GB VRAM each) with a 32K context window. Adjust `--ctx-size` and GPU offloading parameters as needed for different models or hardware.
+
+```bash
+llama-server \
+  --model       ./.cache/llama.cpp/Qwen3.6-35B-A3B-UD-IQ4_XS.gguf \
+  --mmproj      ./.cache/llama.cpp/Qwen3.6-35B-mmproj-F16.gguf \
+  \
+  # GPU offload
+  --n-gpu-layers 99 \
+  --split-mode  row \
+  --tensor-split 1,1 \
+  \
+  # Attention & memory
+  --flash-attn  on \
+  --cache-type-k q8_0 \
+  --cache-type-v q8_0 \
+  \
+  # Context & batching
+  --ctx-size    32768 \
+  --batch-size  4096 \
+  --ubatch-size 4096 \
+  \
+  # Server / agentic config
+  --parallel    1 \
+  --cont-batching \
+  --jinja \
+  \
+  # Sampling (Qwen3 thinking-mode defaults)
+  --temp        1.0 \
+  --top-k       20 \
+  --top-p       0.95 \
+  --min-p       0.0 \
+  --repeat-penalty 1.0 \
+  --host 127.0.0.1 \
+  --port 9090
+```
+
+**For Gemma 4-12B**
+
+The Gemma4-12B model is only ~7 GB in size, which leaves ~16 GB of KV headroom on dual 3060 24 GB and ~5 GB of KV headroom on a single 3060 12 GB at 128K context. There's no benefit from tensor-splitting, because it add unnecessary PCIe overhead.
+
+```bash
+llama-server \
+	--model       ./.cache/llama.cpp//gemma-4-12b-it-UD-Q4_K_XL.gguf \
+	--mmproj      ./.cache/llama.cpp/gemma4-12B-mmproj-F16.gguf \
+  \
+  # Single GPU — model fits in 12GB with 128K context
+  --n-gpu-layers 99 \
+  \
+  # Attention + KV
+  --flash-attn   on \
+  --cache-type-k q8_0 \
+  --cache-type-v q8_0 \
+  \
+  # Context — 128K fits comfortably on single card at Q8
+  --ctx-size     131072 \
+  \
+  # Prefill batch — larger is better for long code context ingestion
+  --batch-size   4096 \
+  --ubatch-size  4096 \
+  \
+  # Agentic config
+  --parallel     1 \
+  --cont-batching \
+  --jinja \
+  \
+  # Gemma 4 sampling calibration (NOT the same as Qwen3.6)
+  --temp         1.0 \
+  --top-p        0.95 \
+  --top-k        64 \
+  \
+  --host         127.0.0.1 \
+  --port         9090
+```
+
+### Flag-by-Flag Reasoning
+
+`--split-mode row`
+
+The default `layer` split mode means that GPU 0 owns the first N layers and GPU 1 owns the rest - they pipeline sequentially. With `row` split, both GPUs work on *every layer simultaneously*, splitting the weight matrices along the row dimension. For MoE, where the expert weights dominate total size, row split keeps both cards active on every forward pass instead of one sitting idle while the other processes its layers. This is critical for maximizing throughput on VRAM-constrained hardware.
+
+`--batch-size 4096` and `--ubatch-size 4096`
+
+For MoE inference, the defaults (2048 & 512) are too small. Setting both to the same value (4096 )is the community recommendation. This dramatically imporoves prefill speed on long code context. Ingesting 10k+ token repo context goes much faster, which is noticeable in agentic coding loops.
+
+> Source: https://huggingface.co/blog/Doctor-Shotgun/llamacpp-moe-offload-guide
+
+`--cache-type-k q8_0` and `--cache-type-v q8_0`
+
+KV quantization is a game-changer for large context windows on limited VRAM. At Q8 its nearly lossless (vs FP16) and roughly havles KV cache VRAM. Critical here since we have only ~4.1 GB VRAM left to work with. If you want to push to 65K context, drop to q4_0 which havles it again with minimal accuracy impact. For 32K context, q8_0 is a sweet spot.
+
+`--parallel 1`
+
+For a single coding agent, one slot is optimal; multiple parallel slots cost extra KV cache - remember every 32K context is about 800 MB of VRAM at Q8. Be mindful of this setting when running multiple agents or allowing concurrent API requests. If you're using an agent harness like Pi.dev that can send multiple requests simultaneously, you may want to set this to 2 or 4 to allow some concurrency, but monitor VRAM usage closely.
+
+`--jinja`
+
+Required for the Qwen3.6 chat template (`thinkingFormat`; `chat-template`) to handle tool calling correctly. Without it, function call schemas may be malformed and your agent will fail on nested JSON responses or reasoning outputs. `Pi.dev` will print human-readable errors about malformed JSON.
+
+`--temp 0.6`
+
+Qwen3 non-thinking mode is calibrated for 0.6. If you enable thinking mode per-request, bumpt this to 1.0 in the request body - the model's CoT quality improves significantly at higher temps, and the reasoning tokens are less likely to be cut off by max token limits. The default 0.6 is too low for good CoT quality.
+
+### MTP GGUF Exists
+
+Unsloth published Multi-Token Prediction GGUFs for the 35B-A3B, which show ~1.15-~1.25x speedup on MoE models in `llama.cpp` with no accuracy loss. It's a smaller gain than the 1.4-2x you'd get on the dense 27B, but if you want to squeeze extra tokens per-second from the same hardware, it's worth trying. You'll need to add `--spec-type draft-mtp --spec-draft-n-max 2`, but MTP currently requires `--parallel 1` since the draft model's KV cache isn't shared across slots yet.
+
+> Source: https://unsloth.ai/docs/models/qwen3.6
+
+---
+
+## How To Determine My Optimal Settings?
+
+### The 5-Step Lookup Process
+
+1. `Identify your model's architecture and size` (e.g. Qwen3.6-35B-A3B-UD-IQ4_XS).
+
+Always your first stop: The `Files` tab on HuggingFace model repo or Ollama model card. This is the single most important number because if defines your VRAM ceiling.
+
+2. `Check for mmproj (Multimodal Projector)`
+
+Look at the model card description for words like "multimodal", "vision", "image", "audio", or "mmproj". If you see those, then it needs an mmproj GGUF. Remember to check the size to account for VRAM usage.
+
+3. `Dense or MoE` (Determines Split Mode & Batch Size)
+
+Model card architecture section should contain all this information. **Dense** requires `--split-mode layer`, which is the default pipeline between GPUs. Models like `gemma 4-12B` are Dense. **MoE** (Mixture of Experts) models require `--split-mode row` to keep both GPUs active on every layer, and a larger batch size (e.g. `4096`) to efficiently utilize the experts.
+
+4. `Read the Model's Own Sampling Recommendations`
+
+Every model family has calibrated defaults. They differ signficantly between models designed for reasoning vs non-reasoning. For `Gemma 4 QAT` variants, the recommended sampling is `temperature 1.0, top_p 0.95, top_k 64`. For `Qwen3.6` variants, the recommended sampling is `temperature 0.6, top_p 0.95, top_k 20`. Using the wrong defaults measurably degrades output quality.
+
+> Source: https://lushbinary.com/blog/gemma-4-qat-self-hosting-guide-ollama-llama-cpp-vllm/
+
+5. `Do the VRAM Math`
+
+Using the `Qwen3.6-35B-A3B-UD-IQ4_XS` as an example.
+
+```block
+Total VRAM  = 24.0 GB   (dual 3060)
+- Model     =  18.2 GB
+- mmproj    =  0.8 GB
+- Runtime   =  0.8 GB   (CUDA buffers, ~constant)
+─────────────────────────
+KV headroom = 16.1 GB
+```
+
+Then calculate max context from KV headroom:
+
+```block
+KV size = ctx_len × n_layers × 2 × n_kv_heads × head_dim × bytes_per_dtype
+
+# Q8_0 = 1 byte/weight  |  Q4_0 = 0.5 byte/weight  |  FP16 = 2 bytes/weight
+```
+
+You get `n_layers`, `n_kv_heads`, and `head_dim` using the llama dump script or by launching the server with a tiny context.
+
+**Using the `llama-gguf-dump` tool**
+```bash
+./llama-gguf-dump ./gemma-4-12b-it-qat-UD-Q4_K_XL.gguf | grep -E "n_layer|n_head|n_embd"
+```
+
+```bash
+llama-server -m model.gguf -ngl 99 -c 512 2>&1 | grep -E "n_layer|n_head_kv|n_embd_head|kv cache"
+```
+
+> You can download the `llama-gguf-dump` tool here: https://github.com/ggml-org/llama.cpp/blob/master/gguf-py/gguf/scripts/gguf_dump.py
+
+Here's an example of the lines you'd be looking for:
+
+```bash
+llm_load_print_meta: n_layer       = 46
+llm_load_print_meta: n_head_kv     = 8
+llm_load_print_meta: n_embd_head_k = 256
+llama_kv_cache_init: VRAM kv cache size = 1024.00 MiB
+```
+
+The last line is `llama.cpp` doing the math for you. It tells you exactly how much KV your chosen context size costs. Adjust `--ctx-size` and relaunch until the allocation fits your headroom.
+
 
 ---
 
