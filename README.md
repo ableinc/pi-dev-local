@@ -57,10 +57,11 @@ ctx-size = 256000
 [my-model:tag]
 model    = /path/to/model.gguf
 ctx-size = 131072
-alias    = my-model,my-model-alias
 ```
 
 Per-model values override `[*]` defaults.
+
+Pi.dev precedence note: when using Pi.dev, `models.json` `contextWindow` takes precedence over `ctx-size` in this INI file.
 
 ---
 
@@ -126,33 +127,30 @@ This means, when serving the model over `llama.cpp` (llama-server) you need to s
 
 ### Recommended llama-server Command
 
-This is strictly for the Qwen3.6-35B-A3B-UD-IQ4_XS model on dual 3060 RTX (12 GB VRAM each) with a 32K context window. Adjust `--ctx-size` and GPU offloading parameters as needed for different models or hardware.
+This is strictly for the `Qwen3.6-35B-A3B-UD-IQ4_XS` model on dual 3060 RTX (12 GB VRAM each) with a 32K context window. Adjust `--ctx-size` and GPU offloading parameters as needed for different models or hardware.
+
+For Pi.dev, keep `models.json` `contextWindow` aligned with this budget (32K for this Qwen profile), because Pi.dev request limits use `models.json` precedence.
 
 ```bash
 llama-server \
   --model       ./.cache/llama.cpp/Qwen3.6-35B-A3B-UD-IQ4_XS.gguf \
   --mmproj      ./.cache/llama.cpp/Qwen3.6-35B-mmproj-F16.gguf \
-  \
   # GPU offload
   --n-gpu-layers 99 \
   --split-mode  row \
   --tensor-split 1,1 \
-  \
   # Attention & memory
   --flash-attn  on \
   --cache-type-k q8_0 \
   --cache-type-v q8_0 \
-  \
   # Context & batching
   --ctx-size    32768 \
   --batch-size  4096 \
   --ubatch-size 4096 \
-  \
   # Server / agentic config
   --parallel    1 \
   --cont-batching \
   --jinja \
-  \
   # Sampling (Qwen3 thinking-mode defaults)
   --temp        1.0 \
   --top-k       20 \
@@ -171,32 +169,25 @@ The Gemma4-12B model is only ~7 GB in size, which leaves ~16 GB of KV headroom o
 llama-server \
 	--model       ./.cache/llama.cpp//gemma-4-12b-it-UD-Q4_K_XL.gguf \
 	--mmproj      ./.cache/llama.cpp/gemma4-12B-mmproj-F16.gguf \
-  \
   # Single GPU — model fits in 12GB with 128K context
   --n-gpu-layers 99 \
-  \
   # Attention + KV
   --flash-attn   on \
   --cache-type-k q8_0 \
   --cache-type-v q8_0 \
-  \
   # Context — 128K fits comfortably on single card at Q8
   --ctx-size     131072 \
-  \
   # Prefill batch — larger is better for long code context ingestion
   --batch-size   4096 \
   --ubatch-size  4096 \
-  \
   # Agentic config
   --parallel     1 \
   --cont-batching \
   --jinja \
-  \
   # Gemma 4 sampling calibration (NOT the same as Qwen3.6)
   --temp         1.0 \
   --top-p        0.95 \
   --top-k        64 \
-  \
   --host         127.0.0.1 \
   --port         9090
 ```
@@ -225,9 +216,9 @@ For a single coding agent, one slot is optimal; multiple parallel slots cost ext
 
 Required for the Qwen3.6 chat template (`thinkingFormat`; `chat-template`) to handle tool calling correctly. Without it, function call schemas may be malformed and your agent will fail on nested JSON responses or reasoning outputs. `Pi.dev` will print human-readable errors about malformed JSON.
 
-`--temp 0.6`
+`--temp 1.0`
 
-Qwen3 non-thinking mode is calibrated for 0.6. If you enable thinking mode per-request, bumpt this to 1.0 in the request body - the model's CoT quality improves significantly at higher temps, and the reasoning tokens are less likely to be cut off by max token limits. The default 0.6 is too low for good CoT quality.
+For this VRAM profile and the recommended command above, use 1.0 as the baseline. If you explicitly disable thinking mode for deterministic, non-reasoning output, you can test 0.6 per request and compare quality for your workload.
 
 ### MTP GGUF Exists
 
@@ -266,43 +257,61 @@ Using the `Qwen3.6-35B-A3B-UD-IQ4_XS` as an example.
 ```block
 Total VRAM  = 24.0 GB   (dual 3060)
 - Model     =  18.2 GB
-- mmproj    =  0.8 GB
+- mmproj    =  0.9 GB
 - Runtime   =  0.8 GB   (CUDA buffers, ~constant)
 ─────────────────────────
-KV headroom = 16.1 GB
+KV headroom = 4.1 GB
 ```
 
 Then calculate max context from KV headroom:
 
-```block
-KV size = ctx_len × n_layers × 2 × n_kv_heads × head_dim × bytes_per_dtype
+$$\text{KV Cache Size (Bytes)} = 2 \times n\_layers \times n\_kv\_heads \times head\_dim \times context\_length \times bytes\_per\_element$$
 
-# Q8_0 = 1 byte/weight  |  Q4_0 = 0.5 byte/weight  |  FP16 = 2 bytes/weight
-```
+* **2**: Accounts for storing both the Key and the Value states.
+* **n_layers**: Read from block_count.
+* **n_kv_heads**: Read from attention.head_count_kv.
+* **head_dim**: Read from attention.key_length (or calculated as $\frac{\text{embedding\_length}}{\text{attention.head\_count}}$).
+* **context_length**: Your --ctx-size runtime parameter (e.g., 512 tokens).
+* **bytes_per_element**: The precision data type of your cache. By default, llama.cpp uses 16-bit float (F16). See [Cache Type Conversion]("#cache-type-conversion") table.
 
-You get `n_layers`, `n_kv_heads`, and `head_dim` using the llama dump script or by launching the server with a tiny context.
+#### Cache Type Conversion
 
-**Using the `llama-gguf-dump` tool**
+| `--cache-type-k` | `bytes_per_element` | Bits |
+| --- | --- | --- |
+| F16 / B16 | 2.0 | 16 |
+| q8_0 | 1.0 | 8 |
+| q4_0 | 0.5 | 4 |
+
+#### Using the `llama-gguf-dump` tool (recommended)
+
+You get `n_layers`, `n_kv_heads`, and `head_dim` using the llama dump script.
+
+| Formula | Llama Key | Description |
+| --- | --- | --- |
+| n_layers | *.block_count | Number of transformer blocks |
+| n_kv_heads | *.attention.head_count_kv | Number of Key/Value (KV) heads for grouped query attention |
+| head_dim | *.attention.key_length or *.attention.head_count | Dimension size of a single attention head |
+
 ```bash
-./llama-gguf-dump ./gemma-4-12b-it-qat-UD-Q4_K_XL.gguf | grep -E "n_layer|n_head|n_embd"
+./llama-gguf-dump ~/.cache/llama.cpp/Qwen3.6-35B-A3B-UD-IQ4_XS.gguf | grep -E "block_count|attention.head_count_kv|attention.key_length"
 ```
+**Output**
 
 ```bash
-llama-server -m model.gguf -ngl 99 -c 512 2>&1 | grep -E "n_layer|n_head_kv|n_embd_head|kv cache"
+INFO:gguf-dump:* Loading: /home/onyx/.cache/llama.cpp/Qwen3.6-35B-A3B-UD-IQ4_XS.gguf
+     21: UINT32     |        1 | qwen35moe.block_count = 41
+     25: UINT32     |        1 | qwen35moe.attention.head_count_kv = 2
+     31: UINT32     |        1 | qwen35moe.attention.key_length = 256
 ```
 
-> You can download the `llama-gguf-dump` tool here: https://github.com/ggml-org/llama.cpp/blob/master/gguf-py/gguf/scripts/gguf_dump.py
+KV Cache Size = 2 * 41 * 2 * 256 * 32768 * 1.0 = `1,375,731,712 (Bytes)` = `1,375.74 (MB)` = `1.3 (GB)`
 
-Here's an example of the lines you'd be looking for:
+The KV cache fits within my `~4.1 GB` of headroom.
 
-```bash
-llm_load_print_meta: n_layer       = 46
-llm_load_print_meta: n_head_kv     = 8
-llm_load_print_meta: n_embd_head_k = 256
-llama_kv_cache_init: VRAM kv cache size = 1024.00 MiB
-```
+You can download the `llama-gguf-dump` tool here: https://github.com/ggml-org/llama.cpp/blob/master/gguf-py/gguf/scripts/gguf_dump.py
 
-The last line is `llama.cpp` doing the math for you. It tells you exactly how much KV your chosen context size costs. Adjust `--ctx-size` and relaunch until the allocation fits your headroom.
+
+> Note: Adjust `--ctx-size` and relaunch until the allocation fits your headroom.
 
 
 ---

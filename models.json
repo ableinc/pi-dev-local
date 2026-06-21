@@ -147,12 +147,11 @@
 			"models": [
 				{
 					"id": "Qwen3.6-35B-A3B-UD-IQ4_XS",
-					"alias": "premium",
 					"name": "Qwen3.6 35B (A3B UD IQ4_XS - Local)",
 					"reasoning": true,
 					"input": ["text"],
-					"contextWindow": 131072,
-					"maxTokens": 32768,
+					"contextWindow": 32768,
+					"maxTokens": 4096,
 					"compat": {
 						"thinkingFormat": "qwen"
 					},
@@ -229,7 +228,7 @@
 					"contextWindow": 131072,
 					"maxTokens": 32000,
 					"compat": {
-						"thinkingFormat": "openrouter"
+						"thinkingFormat": "chat-template"
 					},
 					"thinkingLevelMap": {
 						"off": null,
@@ -247,8 +246,7 @@
 					}
 				},
 				{
-					"id": "gemma-4-12b-it-UD-Q4_K_XL.gguf",
-					"alias": "premium",
+					"id": "gemma-4-12b-it-UD-Q4_K_XL",
 					"name": "Gemma 4 12B Q4_K XL (Local)",
 					"reasoning": true,
 					"input": ["text", "image"],
