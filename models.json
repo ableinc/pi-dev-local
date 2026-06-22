@@ -246,6 +246,31 @@
 					}
 				},
 				{
+					"id": "qwen36-35b-128k-stretch",
+					"name": "Qwen3.6 35B (128K Stretch - Local)",
+					"reasoning": true,
+					"input": ["text"],
+					"contextWindow": 131072,
+					"maxTokens": 4096,
+					"compat": {
+						"thinkingFormat": "qwen"
+					},
+					"thinkingLevelMap": {
+						"off": null,
+						"minimal": "minimal",
+						"low": "low",
+						"medium": "medium",
+						"high": "high",
+						"xhigh": "max"
+					},
+					"cost": {
+						"input": 0,
+						"output": 0,
+						"cacheRead": 0,
+						"cacheWrite": 0
+					}
+				},
+				{
 					"id": "qwen3-coder-30b",
 					"name": "Qwen3 Coder 30B (Local)",
 					"reasoning": true,

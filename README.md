@@ -373,7 +373,13 @@ The KV cache fits within my `~4.1 GB` of headroom.
 You can download the `llama-gguf-dump` tool here: https://github.com/ggml-org/llama.cpp/blob/master/gguf-py/gguf/scripts/gguf_dump.py
 
 
-> Note: Adjust `--ctx-size` and relaunch until the allocation fits your headroom. It's worth noting that Google's Gemma 4 models use Hybrid Attention Mechanism and various other mechanisms to shrink their model size. Because of this, the calculations above cannot be used to determine it's KV Cache Size.
+> Note: Adjust `--ctx-size` and relaunch until the allocation fits your headroom. See the section below to calculate for Google's Gemma 4 models.
+
+#### Using the `llama-gguf-dump` tool for Gemma 4 models
+
+Google's Gemma 4 models use Hybrid Attention Mechanism and several other techniques to shrink their model size and get the best possible performance on limited hardware. Because of this, the calculations in the previous section cannot be used to determine its KV Cache Size. We can still leverage the gguf dump tool, but we'll need to calculate for the `Local` and `Global` context.
+
+**TBA**
 
 
 ---
