@@ -221,6 +221,8 @@ llama-server \
   --port         9090
 ```
 
+> These settings produce about 12 tokens per second. For a reasonable ~30 tokens per second, refer to `gemma-4-12b-it-UD-Q4_K_XL-32k` settings found in the `llama-models.ini` file.
+
 ### Flag-by-Flag Reasoning
 
 `--split-mode row`
