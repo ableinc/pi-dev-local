@@ -668,3 +668,23 @@ Router mode has `--models-autoload` **on** by default. If any client sends a req
 
 - Stop all client traffic first (agents, Open WebUI, scripts)
 - Or restart the server with `--no-models-autoload` to disable on-demand loading entirely
+
+# Converting `.safetensor` Files to GGUF
+
+You can convert open-weight `.safetensor` files to the Llama friendly GGUF model format using the `to_gguf.sh` script found in this repo. This is a simple wrapper around the `convert_hf_to_gguf.py` script provided by `llama.cpp`. You can use either.
+
+## How to Use
+
+```bash
+chmod +x to_gguf.sh
+
+# Straight F16
+./to_gguf.sh /mnt/models/Qwen2.5-32B-Instruct
+
+# With quantization
+./to_gguf.sh /mnt/models/Qwen2.5-32B-Instruct /mnt/models/gguf Q4_K_M
+```
+
+## Learn More
+
+Interested in running a Raspberry Pi 5 Local AI Cluster? Read the [pi-cluster.md]('./pi-cluster.md') file.
