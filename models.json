@@ -346,11 +346,86 @@
 					}
 				},
 				{
-					"id": "gemma4-12b",
-					"name": "Gemma 4 12B (Ollama Blob - Local)",
+					"id": "gemma4-12b-32k",
+					"name": "Gemma 4 12B (32K - Local)",
 					"reasoning": true,
 					"input": ["text", "image"],
-					"contextWindow": 262144,
+					"contextWindow": 32768,
+					"maxTokens": 32000,
+					"compat": {
+						"thinkingFormat": "chat-template"
+					},
+					"thinkingLevelMap": {
+						"off": null,
+						"minimal": "minimal",
+						"low": "low",
+						"medium": "medium",
+						"high": "high",
+						"xhigh": "max"
+					},
+					"cost": {
+						"input": 0,
+						"output": 0,
+						"cacheRead": 0,
+						"cacheWrite": 0
+					}
+				},
+				{
+					"id": "gemma4-12b-64k",
+					"name": "Gemma 4 12B (64K - Local)",
+					"reasoning": true,
+					"input": ["text", "image"],
+					"contextWindow": 65536,
+					"maxTokens": 32000,
+					"compat": {
+						"thinkingFormat": "chat-template"
+					},
+					"thinkingLevelMap": {
+						"off": null,
+						"minimal": "minimal",
+						"low": "low",
+						"medium": "medium",
+						"high": "high",
+						"xhigh": "max"
+					},
+					"cost": {
+						"input": 0,
+						"output": 0,
+						"cacheRead": 0,
+						"cacheWrite": 0
+					}
+				},
+				{
+					"id": "gemma4-12b-96k",
+					"name": "Gemma 4 12B (96K - Local)",
+					"reasoning": true,
+					"input": ["text", "image"],
+					"contextWindow": 98304,
+					"maxTokens": 32000,
+					"compat": {
+						"thinkingFormat": "chat-template"
+					},
+					"thinkingLevelMap": {
+						"off": null,
+						"minimal": "minimal",
+						"low": "low",
+						"medium": "medium",
+						"high": "high",
+						"xhigh": "max"
+					},
+					"cost": {
+						"input": 0,
+						"output": 0,
+						"cacheRead": 0,
+						"cacheWrite": 0
+					}
+				},
+				{
+					"id": "gemma4-12b-128k-stretch",
+					"name": "Gemma 4 12B (128K Stretch - Local)",
+					"reasoning": true,
+					"input": ["text", "image"],
+					"contextWindow": 131072,
 					"maxTokens": 32000,
 					"compat": {
 						"thinkingFormat": "chat-template"
