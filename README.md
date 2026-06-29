@@ -270,7 +270,7 @@ The default `layer` split mode means that GPU 0 owns the first N layers and GPU 
 
 `--batch-size 2048` and `--ubatch-size 1024`
 
-For this Qwen3.6 35B multimodal profile on dual 3060 GPUs, this is the safer baseline to avoid decode-time Vulkan memory spikes. In testing, `4096/4096` can load successfully but still fail on first decode with `vk::Device::allocateMemory: ErrorOutOfDeviceMemory`.
+For this Qwen3.6 35B multimodal profile on dual 3060 GPUs, this is the safer baseline to avoid decode-time CUDA memory spikes.
 
 Tuning ladder:
 
