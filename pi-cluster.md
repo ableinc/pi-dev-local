@@ -343,6 +343,8 @@ curl http://<pi1-ip>:8080/v1/chat/completions \
 --tensor-split 2,1,1    # more layers on Pi-1
 ```
 
+> Note: You can let llama-server handle --tensor-split automatically. --tensor-split is only necessary if you're troubleshooting or need to control how much usage a GPU needs.
+
 Monitor memory and thermals across nodes while a load is running:
 
 ```bash

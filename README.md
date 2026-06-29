@@ -451,7 +451,7 @@ Google's Gemma 4 models use Hybrid Attention Mechanism and several other techniq
 | `-ngl, --gpu-layers N`           | `auto`  | Layers to put in VRAM; `all` = full offload |
 | `-dev, --device dev1,dev2`       | auto    | Specific GPU devices (see `--list-devices`) |
 | `-sm, --split-mode`              | `layer` | `none` / `layer` / `row` / `tensor`         |
-| `-ts, --tensor-split 3,1`        | —       | Proportion of model per GPU                 |
+| `-ts, --tensor-split 3,1`        | —       | Proportion of model per GPU. You can omit this and let llama-server do it automatically.                 |
 | `--kv-offload / --no-kv-offload` | on      | Offload KV cache to VRAM                    |
 | `--fit [on\|off]`                | `on`    | Auto-adjust params to fit in device memory  |
 | `--fit-ctx N`                    | `4096`  | Minimum ctx `--fit` is allowed to shrink to |
@@ -571,16 +571,6 @@ llama-server -m model.gguf \
   --mlock \
   --threads 16 \
   --ctx-size 32768 \
-  --port 9090
-```
-
-### Multi-GPU split
-
-```bash
-llama-server -m model.gguf \
-  --split-mode layer \
-  --tensor-split 3,1 \
-  --gpu-layers all \
   --port 9090
 ```
 
