@@ -32,3 +32,4 @@ cmake -B build \
 # Run nproc or lscpu (detailed) to get your cpu count
 cmake --build build --config Release -j 16
 echo "build-llamacpp-native.sh script is complete"
+echo "Note: To install the binaries to your system-wide directory run - cmake --install $LLAMA_CPP_PATH/build"
