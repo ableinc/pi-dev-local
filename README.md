@@ -191,8 +191,7 @@ llama-server \
   --mmproj      ~/.cache/llama.cpp/Qwen3.6-35B-mmproj-F16.gguf \
   # GPU offload
   --n-gpu-layers 99 \
-  --split-mode  row \
-  --tensor-split 1,1 \
+  --split-mode  layer \
   # Attention & memory
   --flash-attn  on \
   --cache-type-k q8_0 \
@@ -264,9 +263,9 @@ llama-server \
 
 ### Flag-by-Flag Reasoning
 
-`--split-mode row`
+`--split-mode layer`
 
-The default `layer` split mode means that GPU 0 owns the first N layers and GPU 1 owns the rest - they pipeline sequentially. With `row` split, both GPUs work on *every layer simultaneously*, splitting the weight matrices along the row dimension. For MoE, where the expert weights dominate total size, row split keeps both cards active on every forward pass instead of one sitting idle while the other processes its layers. This is critical for maximizing throughput on VRAM-constrained hardware.
+The default `layer` split mode means that GPU 0 owns the first N layers and GPU 1 owns the rest - they pipeline sequentially.
 
 `--batch-size 2048` and `--ubatch-size 1024`
 
@@ -341,7 +340,7 @@ Look at the model card description for words like "multimodal", "vision", "image
 
 3. `Dense or MoE` (Determines Split Mode & Batch Size)
 
-Model card architecture section should contain all this information. **Dense** requires `--split-mode layer`, which is the default pipeline between GPUs. Models like `gemma 4-12B` are Dense. **MoE** (Mixture of Experts) models require `--split-mode row` to keep both GPUs active on every layer. Start with conservative batching (`2048/1024`) and increase gradually only after stability checks.
+Model card architecture section should contain all this information. **Dense** requires `--split-mode layer`, which is the default pipeline between GPUs. Models like `gemma 4-12B` are Dense. **MoE** (Mixture of Experts) models improve with `--split-mode row` to keep both GPUs active on every layer. Start with conservative batching (`2048/1024`) and increase gradually only after stability checks.
 
 4. `Read the Model's Own Sampling Recommendations`
 
