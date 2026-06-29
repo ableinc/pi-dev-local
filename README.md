@@ -42,6 +42,45 @@ llama-server --models-preset llama-models.ini --models-max 2 --port 9090
 llama-server --models-preset ./llama-models.ini --models-max 1 --flash-attn on --port 9090
 ```
 
+## Building Llama.cpp From Source
+
+To get the most out of `llama.cpp` for your system architecture it is best to build from source. You can follow the instructions [here]('https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md'). I've also created a [build script]('./build-llamacpp-native.sh'). The script targeted for my system, but you can change the arguments to fit yours.
+
+| Component | Title |
+| --- | --- |
+| CPU | AMD Ryzen 9 7950X3D x86_64 |
+| GPU | Nvida RTX 3060 12GB |
+| GPU | Nvidia RTX 3060 12GB |
+| RAM | 128 GB NVMe M.2 2280 |
+| OS | Ubuntu 26.04 |
+| CUDA Toolkit | v13.3 |
+
+### 1. Essential CUDA & Hardware Target Flags
+
+* **-DGGML_CUDA=ON**
+Enables CUDA acceleration. This ensures llama.cpp compiles with the Nvidia backend rather than using standard CPU processing.
+* **-DCMAKE_CUDA_ARCHITECTURES=86**
+Targets the Ampere architecture. The RTX 3060 utilizes compute capability 86. Explicitly declaring this reduces compilation times by ignoring irrelevant architectures (like Volta or Ada Lovelace) and enables native optimizations for your specific hardware's Tensor Cores.
+* **-DCMAKE_BUILD_TYPE=Release**
+Enables heavy compiler optimizations (-O3). Without this flag, the build might default to a non-optimized or debug profile, resulting in significantly slower speeds.
+
+### 2. Multi-GPU & Context Window Flags
+
+* **-DGGML_CUDA_FA_ALL_QUANTS=ON**
+Enables generalized Flash Attention. As discussed, this is mandatory if you plan on using asymmetric quantized KV caches across your dual GPUs to fit larger context windows without suffering massive CPU bottlenecks.
+* **-DGGML_CUDA_GRAPHS=ON**
+Reduces CPU-to-GPU scheduling overhead. CUDA Graphs capture sequence executions as a single unit. This heavily minimizes the latency spikes caused by splitting tasks across two separate physical cards.
+* **-DGGML_BUILD_REALS_NCCL=ON** (Requires libnccl2 installed on Linux)
+Enables Nvidia Collective Communications Library (NCCL). If you run your dual 3060s using Tensor parallelism (--split-mode tensor), this flag is critical. It maximizes the data transfer rate between your two cards over the PCIe lanes. Note: Skip this if you intend to stick to traditional Pipeline parallelism (--split-mode layer).
+
+### 3. CPU Host Optimizations (For Prompt Prefills & Fallbacks)
+Your CPU still coordinates data processing and executes any layers that might spill over your VRAM threshold.
+
+* **-DCMAKE_C_FLAGS="-march=native"** and **-DCMAKE_CXX_FLAGS="-march=native"**
+Enables processor-specific instructions. It forces the compiler to build the code utilizing every capability of your specific CPU (such as AVX2 or AVX-512 vector instructions).
+
+> Note: If you installed NCCL on your Linux machine to use tensor-splitting, remember to append -DGGML_BUILD_REALS_NCCL=ON to the configuration script.
+
 ---
 
 ## The INI Preset File

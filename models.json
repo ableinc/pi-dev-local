@@ -496,6 +496,36 @@
 					}
 				}
 			]
+		},
+		"node1pi5": {
+			"baseUrl": "http://node1pi5.local:9090/v1",
+			"api": "openai-completions",
+			"apiKey": "none",
+			"models": [
+				{
+					"id": "gemma-4-E4B-it-qat-UD-Q2_K_XL",
+					"name": "Gemma 4 E4B Q4 (Pi5 Node 1 - Local)",
+					"reasoning": true,
+					"input": ["text"],
+					"contextWindow": 32768,
+					"maxTokens": 8096,
+					"compat": {
+						"thinkingFormat": "chat-template"
+					},
+					"thinkingLevelMap": {
+						"off": null,
+						"minimal": "minimal",
+						"low": "low",
+						"medium": "medium"
+					},
+					"cost": {
+						"input": 0,
+						"output": 0,
+						"cacheRead": 0,
+						"cacheWrite": 0
+					}
+				}
+			]
 		}
 	}
 }

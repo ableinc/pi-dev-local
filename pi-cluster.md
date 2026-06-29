@@ -263,7 +263,8 @@ Description=llama.cpp RPC Server
 After=network.target
 
 [Service]
-ExecStart=/home/pi/llama-bin/llama-rpc-server -H 0.0.0.0 -p 50052
+Environment="LD_LIBRARY_PATH=/home/pi/llama-bin"
+ExecStart=/home/pi/llama-bin/ggml-rpc-server -H 0.0.0.0 -p 50052
 Restart=always
 RestartSec=5
 Nice=-10
@@ -278,6 +279,25 @@ sudo systemctl enable --now llama-rpc
 
 # Verify
 ss -tlnp | grep 50052
+# LISTEN 0      1          0.0.0.0:50052      0.0.0.0:*
+```
+
+#### View Service Logs
+
+```bash
+sudo journalctl -u llama-rpc.service -f
+```
+
+Read the last `n` lines:
+
+```bash
+sudo journalctl -u llama-rpc.service -n 50
+```
+
+If the Pi rebooted and you only want to see the logs from the current boot
+
+```bash
+sudo journalctl -u llama-rpc.service -b
 ```
 
 ### Step 2 — Run Inference (Pi-1)
