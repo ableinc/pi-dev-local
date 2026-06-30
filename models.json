@@ -494,6 +494,31 @@
 						"cacheRead": 0,
 						"cacheWrite": 0
 					}
+				},
+				{
+					"id": "Qwen3.6-27B-Q4_0-coding-64k",
+					"name": "Qwen3.6 27B Q4_0 Coding (64K - Local)",
+					"reasoning": true,
+					"input": ["text"],
+					"contextWindow": 65536,
+					"maxTokens": 4096,
+					"compat": {
+						"thinkingFormat": "qwen"
+					},
+					"thinkingLevelMap": {
+						"off": null,
+						"minimal": "minimal",
+						"low": "low",
+						"medium": "medium",
+						"high": "high",
+						"xhigh": "max"
+					},
+					"cost": {
+						"input": 0,
+						"output": 0,
+						"cacheRead": 0,
+						"cacheWrite": 0
+					}
 				}
 			]
 		},
